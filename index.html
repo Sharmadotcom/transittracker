@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#6C63FF" />
+  <meta name="description" content="Real-time public bus tracking for tier-2 Indian cities. Track buses live, view ETAs, and plan your commute." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>TransitTrack — Real-Time Bus Tracking</title>
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Design System -->
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+
+<!-- ── Loading Overlay ──────────────────────────────────────── -->
+<div id="loading-overlay">
+  <div class="loading-logo">🚌</div>
+  <div>
+    <span style="font-weight:700;font-size:1.1rem">TransitTrack</span>
+    <div class="loading-text loading-dots" style="text-align:center;margin-top:4px">
+      Loading city data<span>.</span><span>.</span><span>.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── App Shell ────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Header -->
+  <header id="app-header">
+    <a href="#" class="logo" id="logo-link">
+      <div class="logo-icon">🚌</div>
+      Transit<span>Track</span>
+    </a>
+
+    <!-- City Selector -->
+    <div id="city-selector-wrap">
+      <select id="city-selector" aria-label="Select city">
+        <option value="nashik">📍 Nashik, Maharashtra</option>
+        <option value="indore">📍 Indore, Madhya Pradesh</option>
+        <option value="bhopal">📍 Bhopal, Madhya Pradesh</option>
+      </select>
+      <span class="selector-arrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </span>
+    </div>
+
+    <!-- Search -->
+    <div id="header-search">
+      <span class="search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input type="text" id="search-input" placeholder="Search routes, stops…" autocomplete="off" aria-label="Search" />
+      <div id="search-results" role="listbox" aria-label="Search results"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <button id="lbm-toggle" title="Toggle low-bandwidth mode" aria-pressed="false">
+        <span class="toggle-dot"></span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 6s4-6 11-6 11 6 11 6"/><path d="M1 18s4 6 11 6 11-6 11-6"/>
+          <line x1="12" y1="12" x2="12" y2="12"/>
+        </svg>
+        <span>Low-BW Mode</span>
+      </button>
+      <button class="icon-btn" id="sidebar-toggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div id="main">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" role="navigation" aria-label="Routes and bus information">
+
+      <!-- City Info -->
+      <div id="city-info">
+        <div class="city-title">
+          <span class="city-dot"></span>
+          <span id="city-display-name">Nashik</span>
+          <span style="font-size:0.78rem;color:var(--text-muted);font-weight:400" id="city-state">Maharashtra</span>
+        </div>
+        <div class="city-stats">
+          <div class="stat-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="22" height="16" rx="2"/><path d="M1 10h22"/>
+            </svg>
+            <span id="stat-routes" class="stat-value">3</span>&nbsp;<span>routes</span>
+          </div>
+          <div class="stat-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span id="stat-buses" class="stat-value">10</span>&nbsp;<span>buses</span>
+          </div>
+          <div class="stat-item">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <span id="stat-ontime" class="stat-value">94%</span>&nbsp;<span>on-time</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div id="sidebar-tabs" role="tablist">
+        <button class="sidebar-tab active" id="tab-routes" role="tab" aria-selected="true" data-tab="routes">Routes</button>
+        <button class="sidebar-tab" id="tab-buses" role="tab" aria-selected="false" data-tab="buses">Live Buses</button>
+        <button class="sidebar-tab" id="tab-alerts" role="tab" aria-selected="false" data-tab="alerts">Alerts</button>
+      </div>
+
+      <!-- Content panels -->
+      <div id="sidebar-content">
+
+        <!-- Routes Tab -->
+        <div id="panel-routes" class="tab-panel">
+          <div class="section-label">All Routes</div>
+          <div id="routes-list"></div>
+        </div>
+
+        <!-- Live Buses Tab -->
+        <div id="panel-buses" class="tab-panel" style="display:none">
+          <div class="section-label">Active Buses</div>
+          <div id="buses-list"></div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="panel-alerts" class="tab-panel" style="display:none">
+          <div class="section-label">Service Alerts</div>
+          <div id="alerts-list" style="padding:0 12px"></div>
+        </div>
+
+      </div><!-- /sidebar-content -->
+    </aside><!-- /sidebar -->
+
+    <!-- Map -->
+    <div id="map-wrap">
+      <div id="map" role="application" aria-label="Live bus tracking map"></div>
+
+      <!-- Stats overlay -->
+      <div id="stats-bar" aria-live="polite">
+        <div class="stat-pill">
+          <span class="stat-pill-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span>
+          <strong id="map-stat-buses">10</strong>&nbsp;buses active
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-dot" style="background:var(--accent)"></span>
+          <strong id="map-stat-ontime">94%</strong>&nbsp;on-time
+        </div>
+        <div class="stat-pill" id="map-stat-time">
+          🕐 <strong id="map-clock"></strong>
+        </div>
+      </div>
+
+      <!-- Bus info card -->
+      <div id="bus-info-card" role="dialog" aria-label="Bus details">
+        <div class="bic-header">
+          <div class="bic-badge" id="bic-badge">N1</div>
+          <div class="bic-name" id="bic-name">Route name</div>
+          <button class="bic-close" id="bic-close" aria-label="Close">✕</button>
+        </div>
+        <div class="bic-stats">
+          <div class="bic-stat">
+            <div class="bic-stat-label">Status</div>
+            <div class="bic-stat-value" id="bic-status">Moving</div>
+          </div>
+          <div class="bic-stat">
+            <div class="bic-stat-label">Speed</div>
+            <div class="bic-stat-value" id="bic-speed">22 km/h</div>
+          </div>
+          <div class="bic-stat">
+            <div class="bic-stat-label">Bus ID</div>
+            <div class="bic-stat-value" id="bic-id">N1-B1</div>
+          </div>
+          <div class="bic-stat">
+            <div class="bic-stat-label">Fare</div>
+            <div class="bic-stat-value" id="bic-fare">₹10</div>
+          </div>
+        </div>
+        <div class="bic-next-stop">
+          <div class="bic-next-label">▶ Next Stop</div>
+          <div class="bic-next-name" id="bic-next-stop">—</div>
+          <div class="bic-next-eta" id="bic-next-eta">—</div>
+        </div>
+        <div class="bic-crowd">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="bic-crowd-label">Low crowd</span>
+          <div class="crowd-bar" id="bic-crowd-bar">
+            <div class="crowd-seg"></div>
+            <div class="crowd-seg"></div>
+            <div class="crowd-seg"></div>
+          </div>
+        </div>
+      </div><!-- /bus-info-card -->
+
+      <!-- Alert Ticker -->
+      <div id="alert-ticker">
+        <span class="ticker-label">🔔 ALERTS</span>
+        <div class="ticker-scroll" id="ticker-content"></div>
+      </div>
+
+    </div><!-- /map-wrap -->
+
+    <!-- Low-Bandwidth Text View -->
+    <div id="lbm-view" role="region" aria-label="Low bandwidth bus list">
+      <div class="lbm-header">
+        <div class="lbm-city-title" id="lbm-city-name">Nashik</div>
+        <div class="lbm-badge">📶 Low-BW Mode</div>
+      </div>
+      <div id="lbm-content"></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Toast Container -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- App (ES Module) -->
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
