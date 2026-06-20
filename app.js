@@ -1,11 +1,270 @@
 // ============================================================
 // TransitTrack — Main App Controller v2
 // Orchestrates: Map, simulation, trip planner, favorites,
-// weather, particle canvas, keyboard shortcuts
+// weather, particle canvas, keyboard shortcuts, premium features
 // ============================================================
 
 import CITIES, { AMENITY_ICONS, WEATHER_DATA, WEATHER_ICONS } from './data/routes.js';
 import { BusTracker } from './simulation/tracker.js';
+
+// ── TRANSLATIONS DATA ────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    logoTrack: "Track",
+    allRoutes: "Routes",
+    activeBuses: "Live Buses",
+    planYourTrip: "Trip Planner",
+    tickets: "Tickets",
+    alerts: "Alerts",
+    allRoutesLabel: "All Routes",
+    activeBusesLabel: "Active Buses",
+    planYourTripLabel: "Plan Your Trip",
+    bookTransitPassLabel: "Book Transit Pass",
+    serviceAlertsLabel: "Service Alerts",
+    fromLabel: "From",
+    toLabel: "To",
+    findRoutesBtn: "Find Routes",
+    selectRouteLabel: "Select Route",
+    fromStopLabel: "From Stop",
+    toStopLabel: "To Stop",
+    estFareLabel: "Estimated Fare:",
+    bookPassBtnLabel: "Book Digital Pass",
+    passengerLabel: "Passenger",
+    routeLabel: "Route",
+    fromStopPass: "From",
+    toStopPass: "To",
+    dateLabel: "Date",
+    farePaidLabel: "Fare Paid",
+    cancelPassBtn: "Cancel Pass",
+    departureBoardLabel: "Departure Board (Live ETAs)",
+    stopFacilitiesLabel: "Stop Facilities",
+    statusLabel: "Status",
+    speedLabel: "Speed",
+    busIdLabel: "Bus ID",
+    fareLabel: "Fare",
+    routeProgressLabel: "Route Progress",
+    nextStopLabel: "Next Stop",
+    lowCrowdLabel: "Low crowd",
+    modCrowdLabel: "Moderate crowd",
+    highCrowdLabel: "High crowd",
+    arrivingNowLabel: "Arriving now",
+    arrivingInLabel: "Arrives in",
+    noBusesHeadingLabel: "No buses heading here shortly",
+    nextBusInLabel: "Next bus in",
+    lowBwModeBadge: "Low-BW Mode",
+    activePill: "active",
+    onTimePill: "on-time",
+    savedLabel: "Saved",
+    searchPlaceholder: "Search routes, stops…",
+    trafficBtn: "Traffic",
+    upiTitle: "Select UPI App",
+    gpay: "Google Pay",
+    phonepe: "PhonePe",
+    paytm: "Paytm UPI",
+    waitingChoice: "Waiting for choice...",
+    cancelPaymentBtn: "Cancel Payment",
+    tourWelcomeTitle: "Welcome to TransitTrack",
+    tourWelcomeBody: "Track live buses, find routes, book passes and navigate Indian tier-2 cities seamlessly.",
+    tourSearchTitle: "Smart Transit Search",
+    tourSearchBody: "Use the search bar or press '/' key to look up any routes, stops, or cities instantly.",
+    tourMapTitle: "Interactive Live Map",
+    tourMapBody: "Switch between Dark Transit, Streets, or Satellite overlays and check traffic congestion.",
+    tourDeparturesTitle: "Live Departures & Seats",
+    tourDeparturesBody: "Click any stop to view live countdown ETAs, or click a bus to inspect seat occupancy.",
+    tourPassTitle: "Digital Ticketing",
+    tourPassBody: "Book digital transit passes, simulate UPI payments and generate canvas QR tickets instantly.",
+    navMap: "Live Map",
+    navAnalytics: "Analytics",
+    navSupport: "Support",
+    navAbout: "About",
+    analyTitle: "Transit Analytics Dashboard",
+    analySubtitle: "Real-time scheduling adherence and route logistics metrics.",
+    lblSpeed: "Average Operational Speed",
+    lblDelay: "Average Route Delay",
+    lblReliability: "Reliability Index",
+    lblEmissions: "CO2 Offset Today",
+    lblCongestion: "Hourly Congestion Profile",
+    lblHeadway: "Route Headway Adherence",
+    faqTitle: "Frequently Asked Questions",
+    feedbackTitle: "Submit Feedback / Report Delay",
+    lblSubject: "Subject",
+    lblName: "Your Name",
+    lblMsg: "Details / Description",
+    aboutTitle: "TransitTrack Smart Commuting",
+    aboutSubtitle: "Pioneering real-time municipal logistics tracking for Indian metropolitan transit agencies.",
+    aboutEcoSavings: "Simulated Carbon Savings"
+  },
+  hi: {
+    logoTrack: "ट्रैक",
+    allRoutes: "मार्ग",
+    activeBuses: "लाइव बसें",
+    planYourTrip: "यात्रा योजना",
+    tickets: "टिकट",
+    alerts: "अलर्ट",
+    allRoutesLabel: "सभी मार्ग",
+    activeBusesLabel: "सक्रिय बसें",
+    planYourTripLabel: "अपनी यात्रा की योजना बनाएं",
+    bookTransitPassLabel: "पास बुक करें",
+    serviceAlertsLabel: "सेवा अलर्ट",
+    fromLabel: "कहाँ से",
+    toLabel: "कहाँ तक",
+    findRoutesBtn: "मार्ग खोजें",
+    selectRouteLabel: "मार्ग चुनें",
+    fromStopLabel: "शुरुआती स्टॉप",
+    toStopLabel: "गंतव्य स्टॉप",
+    estFareLabel: "अनुमानित किराया:",
+    bookPassBtnLabel: "डिजिटल पास बुक करें",
+    passengerLabel: "यात्री",
+    routeLabel: "मार्ग",
+    fromStopPass: "प्रस्थान",
+    toStopPass: "गंतव्य",
+    dateLabel: "तिथि",
+    farePaidLabel: "भुगतान किया",
+    cancelPassBtn: "पास रद्द करें",
+    departureBoardLabel: "लाइव आगमन बोर्ड (ETAs)",
+    stopFacilitiesLabel: "स्टॉप सुविधाएं",
+    statusLabel: "स्थिति",
+    speedLabel: "गति",
+    busIdLabel: "बस आईडी",
+    fareLabel: "किराया",
+    routeProgressLabel: "मार्ग प्रगति",
+    nextStopLabel: "अगला स्टॉप",
+    lowCrowdLabel: "कम भीड़",
+    modCrowdLabel: "मध्यम भीड़",
+    highCrowdLabel: "अधिक भीड़",
+    arrivingNowLabel: "अभी आ रही है",
+    arrivingInLabel: "आगमन",
+    noBusesHeadingLabel: "जल्द ही कोई बस नहीं आ रही है",
+    nextBusInLabel: "अगली बस",
+    lowBwModeBadge: "कम बैंडविड्थ",
+    activePill: "सक्रिय",
+    onTimePill: "समय पर",
+    savedLabel: "सहेजें",
+    searchPlaceholder: "मार्ग, स्टॉप खोजें…",
+    trafficBtn: "यातायात",
+    upiTitle: "UPI ऐप चुनें",
+    gpay: "गूगल पे",
+    phonepe: "फ़ोन पे",
+    paytm: "पेटीएम UPI",
+    waitingChoice: "विकल्प चुनने की प्रतीक्षा है...",
+    cancelPaymentBtn: "भुगतान रद्द करें",
+    tourWelcomeTitle: "ट्रांजिटट्रैक में आपका स्वागत है",
+    tourWelcomeBody: "लाइव बसों को ट्रैक करें, मार्ग ढूंढें, पास बुक करें और भारतीय शहरों में यात्रा आसान बनाएं।",
+    tourSearchTitle: "स्मार्ट ट्रांजिट खोज",
+    tourSearchBody: "किसी भी मार्ग, स्टॉप या शहर को खोजने के लिए खोज बार का उपयोग करें या '/' दबाएं।",
+    tourMapTitle: "इंटरएक्टिव लाइव मैप",
+    tourMapBody: "डार्क ट्रांजिट, सामान्य सड़कों या सैटेलाइट मैप में बदलें और लाइव यातायात देखें।",
+    tourDeparturesTitle: "लाइव आगमन और सीटें",
+    tourDeparturesBody: "लाइव आगमन देखने के लिए स्टॉप पर क्लिक करें या सीटों की स्थिति देखने के लिए बस पर क्लिक करें।",
+    tourPassTitle: "डिजिटल टिकटिंग",
+    tourPassBody: "डिजिटल ट्रांजिट पास बुक करें, UPI भुगतान करें और तत्काल QR कोड टिकट बनाएं।",
+    navMap: "लाइव मैप",
+    navAnalytics: "विश्लेषण",
+    navSupport: "सहायता",
+    navAbout: "हमारे बारे में",
+    analyTitle: "ट्रांजिट विश्लेषण डैशबोर्ड",
+    analySubtitle: "वास्तविक समय समय सारणी अनुपालन और मार्ग रसद मीट्रिक।",
+    lblSpeed: "औसत परिचालन गति",
+    lblDelay: "औसत मार्ग विलंब",
+    lblReliability: "विश्वसनीयता सूचकांक",
+    lblEmissions: "कार्बन उत्सर्जन बचत आज",
+    lblCongestion: "प्रति घंटा यातायात प्रोफाइल",
+    lblHeadway: "मार्ग हेडवे अनुपालन",
+    faqTitle: "अक्सर पूछे जाने वाले प्रश्न",
+    feedbackTitle: "प्रतिक्रिया सबमिट करें / देरी की रिपोर्ट करें",
+    lblSubject: "विषय",
+    lblName: "आपका नाम",
+    lblMsg: "विवरण / स्पष्टीकरण",
+    aboutTitle: "ट्रांजिटट्रैक स्मार्ट आवागमन",
+    aboutSubtitle: "भारतीय महानगरीय परिवहन एजेंसियों के लिए वास्तविक समय रसद ट्रैकिंग।",
+    aboutEcoSavings: "सिम्युलेटेड कार्बन बचत"
+  },
+  mr: {
+    logoTrack: "ट्रॅक",
+    allRoutes: "मार्ग",
+    activeBuses: "लाइव्ह बसेस",
+    planYourTrip: "प्रवास नियोजन",
+    tickets: "तिकीट",
+    alerts: "अलर्ट",
+    allRoutesLabel: "सर्व मार्ग",
+    activeBusesLabel: "सक्रिय बसेस",
+    planYourTripLabel: "प्रवासाचे नियोजन करा",
+    bookTransitPassLabel: "पास बुक करा",
+    serviceAlertsLabel: "सेवा अलर्ट",
+    fromLabel: "कुठून",
+    toLabel: "कुठे",
+    findRoutesBtn: "मार्ग शोधा",
+    selectRouteLabel: "मार्ग निवडा",
+    fromStopLabel: "सुरूवातीचे थांबा",
+    toStopLabel: "शेवटचा थांबा",
+    estFareLabel: "अंदाजे भाडे:",
+    bookPassBtnLabel: "डिजिटल पास बुक करा",
+    passengerLabel: "प्रवासी",
+    routeLabel: "मार्ग",
+    fromStopPass: "प्रस्थान",
+    toStopPass: "गंतव्य",
+    dateLabel: "तारीख",
+    farePaidLabel: "भरलेले भाडे",
+    cancelPassBtn: "पास रद्द करा",
+    departureBoardLabel: "वेळापत्रक (आगमन)",
+    stopFacilitiesLabel: "थांबा सुविधा",
+    statusLabel: "स्थिती",
+    speedLabel: "वेग",
+    busIdLabel: "बस आयडी",
+    fareLabel: "भाडे",
+    routeProgressLabel: "मार्ग प्रगती",
+    nextStopLabel: "पुढील थांबा",
+    lowCrowdLabel: "कमी गर्दी",
+    modCrowdLabel: "मध्यम गर्दी",
+    highCrowdLabel: "जास्त गर्दी",
+    arrivingNowLabel: "आता येत आहे",
+    arrivingInLabel: "येईल",
+    noBusesHeadingLabel: "लवकरच कोणतीही बस येत नाही",
+    nextBusInLabel: "पुढील बस",
+    lowBwModeBadge: "कमी बँडविड्थ",
+    activePill: "सक्रिय",
+    onTimePill: "वेळेवर",
+    savedLabel: "साठवले",
+    searchPlaceholder: "मार्ग, थांबा शोधा…",
+    trafficBtn: "वाहतूक",
+    upiTitle: "UPI ॲप निवडा",
+    gpay: "गुगल पे",
+    phonepe: "फोन पे",
+    paytm: "पेटीएम UPI",
+    waitingChoice: "निवडीची प्रतीक्षा आहे...",
+    cancelPaymentBtn: "पेमेंट रद्द करा",
+    tourWelcomeTitle: "ट्रान्झिटट्रॅक मध्ये आपले स्वागत आहे",
+    tourWelcomeBody: "थेट बसेस ट्रॅक करा, मार्ग शोधा, पास बुक करा आणि भारतीय शहरांमध्ये सहज प्रवास करा.",
+    tourSearchTitle: "स्मार्ट ट्रान्झिट शोध",
+    tourSearchBody: "कोणताही मार्ग, थांबा किंवा शहर शोधण्यासाठी शोध पट्टी वापरा किंवा '/' की दाबा.",
+    tourMapTitle: "परस्परसंवादी थेट नकाशा",
+    tourMapBody: "डार्क ट्रान्झिट, रस्ते किंवा उपग्रह नकाशे बदला आणि थेट रहदारी तपासा.",
+    tourDeparturesTitle: "थेट आगमन आणि जागा",
+    tourDeparturesBody: "थेट आगमन पाहण्यासाठी थांब्यावर क्लिक करा किंवा बसमधील जागांची स्थिती पाहण्यासाठी बसवर क्लिक करा.",
+    tourPassTitle: "डिजिटल तिकीट",
+    tourPassBody: "थेट डिजिटल पास बुक करा, UPI पेमेंट करा आणि तात्काळ QR तिकीट तयार करा.",
+    navMap: "थेट नकाशा",
+    navAnalytics: "विश्लेषण",
+    navSupport: "मदत",
+    navAbout: "माहिती",
+    analyTitle: "प्रवास विश्लेषण डॅशबोर्ड",
+    analySubtitle: "थेट वेळेचे वेळापत्रक पालन आणि मार्ग लॉजिस्टिक आकडेवारी.",
+    lblSpeed: "सरासरी वेग",
+    lblDelay: "सरासरी मार्ग विलंब",
+    lblReliability: "विश्वसनीयता निर्देशांक",
+    lblEmissions: "आजची कार्बन उत्सर्जन बचत",
+    lblCongestion: "ताशी रहदारी प्रोफाइल",
+    lblHeadway: "मार्ग वेळापत्रक पालन",
+    faqTitle: "नेहमी विचारले जाणारे प्रश्न",
+    feedbackTitle: "अभिप्राय सबमिट करा / विलंबाची नोंद करा",
+    lblSubject: "विषय",
+    lblName: "तुमचे नाव",
+    lblMsg: "तपशील / वर्णन",
+    aboutTitle: "ट्रान्झिटट्रॅक स्मार्ट प्रवास",
+    aboutSubtitle: "भारतीय शहर परिवहन संस्थांसाठी थेट लॉजिस्टिक ट्रॅकिंग.",
+    aboutEcoSavings: "कार्बन उत्सर्जनातील बचत"
+  }
+};
 
 // ── Constants ────────────────────────────────────────────────
 const CROWD_LABELS = ['Low crowd', 'Moderate crowd', 'High crowd'];
@@ -40,6 +299,13 @@ class TransitApp {
     this.activeRouteId = null;
     this.lowBandwidth = false;
     this.unsubscribe = null;
+
+    this.currentLanguage = 'en';
+    this.activePass = null;
+    this.trafficOverlayActive = false;
+    this.mapTheme = 'dark';
+    this.tourStep = 0;
+    this.tileLayers = {};
 
     /** @type {Map<string, L.Marker>} */
     this.busMarkers = new Map();
@@ -80,6 +346,7 @@ class TransitApp {
     this.buildTicker();
     this.startWeather();
     this.renderFavorites();
+    this.startEcoSavingsCounter();
 
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -107,10 +374,24 @@ class TransitApp {
       attributionControl: true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(this.map);
+    this.tileLayers = {
+      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 19
+      }),
+      light: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+      }),
+      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19
+      })
+    };
+
+    // Add default theme
+    this.tileLayers[this.mapTheme].addTo(this.map);
+    this.map.getContainer().classList.add('dark-map');
 
     L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
@@ -264,12 +545,20 @@ class TransitApp {
     this.updateCityHeader(city);
     this.renderAlerts(cityId);
     this.populateTripPlanner(city);
+    this.populateTicketSelectors(city);
 
     // LBM
     this.updateLBMCity(city);
 
     // Weather
     this.updateWeather();
+
+    // Analytics route filter and chart updates
+    this.populateAnalyticsRouteFilter();
+    const activeNav = document.querySelector('#app-nav .nav-item.active');
+    if (activeNav && activeNav.dataset.page === 'analytics') {
+      this.updateAnalytics();
+    }
 
     this.showToast(`Loaded ${city.name} — ${city.routes.reduce((s,r)=>s+r.busCount,0)} buses tracking`);
   }
@@ -439,6 +728,10 @@ class TransitApp {
     this.populateBusCard(bus, route);
     document.getElementById('bus-info-card').classList.add('visible');
 
+    // Reset seat map layout visibility on click
+    document.getElementById('bic-seat-map-panel').style.display = 'none';
+    document.getElementById('bic-seat-map-btn').classList.remove('active');
+
     // Pan map toward bus
     this.map.panTo([bus.lat, bus.lng], { animate: true, duration: 0.4 });
 
@@ -475,6 +768,11 @@ class TransitApp {
 
     // Route progress bar
     this.updateRouteProgress(bus, route);
+
+    // Refresh seat occupancy grid if visible
+    if (document.getElementById('bic-seat-map-panel').style.display === 'block') {
+      this.renderSeatMap(bus);
+    }
   }
 
   // ── Route Progress Visualization ─────────────────────────
@@ -551,20 +849,8 @@ class TransitApp {
   // ── Stop Click ───────────────────────────────────────────
 
   onStopClick(stop, route) {
-    // Highlight the route
     this.highlightRoute(route.id);
-
-    // Show toast with ETA info
-    const busesEnRoute = Array.from(this.busState.values()).filter(
-      b => b.routeId === route.id && b.nextStop === stop.name
-    );
-    if (busesEnRoute.length > 0) {
-      const first = busesEnRoute[0];
-      const eta = first.nextStopEta < 1 ? '<1 min' : `${Math.round(first.nextStopEta)} min`;
-      this.showToast(`${stop.name} — Next bus in ${eta}`);
-    } else {
-      this.showToast(`${stop.name} — ${route.name}`);
-    }
+    this.showStopDetails(stop, route);
   }
 
   // ── Sidebar Rendering ────────────────────────────────────
@@ -1250,6 +1536,13 @@ class TransitApp {
   // ── UI Events ────────────────────────────────────────────
 
   initUI() {
+    // Navigation page switching
+    document.querySelectorAll('#app-nav .nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.switchPage(btn.dataset.page);
+      });
+    });
+
     // City selector
     document.getElementById('city-selector').addEventListener('change', e => {
       this.loadCity(e.target.value);
@@ -1349,6 +1642,107 @@ class TransitApp {
       if (delta < -30) sidebar.classList.add('expanded');
       else if (delta > 30) sidebar.classList.remove('expanded');
     }, { passive: true });
+
+    // Language switcher
+    document.getElementById('lang-selector')?.addEventListener('change', (e) => {
+      this.switchLanguage(e.target.value);
+    });
+
+    // Map style and traffic layers
+    document.getElementById('btn-traffic-toggle')?.addEventListener('click', () => {
+      this.toggleTrafficOverlay();
+    });
+
+    document.getElementById('btn-theme-menu')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('map-theme-dropdown')?.classList.toggle('visible');
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('map-theme-dropdown')?.classList.remove('visible');
+    });
+
+    document.querySelectorAll('#map-theme-dropdown .theme-opt').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        this.setMapTheme(e.target.dataset.theme);
+      });
+    });
+
+    // Bus seat map toggle
+    document.getElementById('bic-seat-map-btn')?.addEventListener('click', () => {
+      this.toggleSeatMap();
+    });
+
+    // Stop details back button
+    document.getElementById('stop-details-back-btn')?.addEventListener('click', () => {
+      this.closeStopDetails();
+    });
+
+    // Pass booking events
+    document.getElementById('ticket-book-btn')?.addEventListener('click', () => {
+      this.startPassBooking();
+    });
+
+    document.getElementById('ticket-cancel-btn')?.addEventListener('click', () => {
+      this.cancelPass();
+    });
+
+    document.querySelectorAll('.pay-app').forEach(app => {
+      app.addEventListener('click', (e) => {
+        this.processUPIPayment(e.currentTarget.dataset.payApp);
+      });
+    });
+
+    document.getElementById('payment-cancel-btn')?.addEventListener('click', () => {
+      this.cancelPayment();
+    });
+
+    // Onboarding tour events
+    document.getElementById('tour-toggle-btn')?.addEventListener('click', () => {
+      this.startTour();
+    });
+
+    document.getElementById('tour-close-btn')?.addEventListener('click', () => {
+      this.endTour();
+    });
+
+    document.getElementById('tour-skip-btn')?.addEventListener('click', () => {
+      this.endTour();
+    });
+
+    document.getElementById('tour-next-btn')?.addEventListener('click', () => {
+      this.nextTourStep();
+    });
+
+    // Analytics Route Filter change
+    document.getElementById('analytics-route-filter')?.addEventListener('change', () => {
+      this.updateAnalytics();
+    });
+
+    // FAQ Accordion toggles
+    document.querySelectorAll('.faq-question').forEach(q => {
+      q.addEventListener('click', () => {
+        const item = q.closest('.faq-item');
+        const isActive = item?.classList.contains('active');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+        if (item && !isActive) {
+          item.classList.add('active');
+        }
+      });
+    });
+
+    // Support Form submit
+    const feedbackForm = document.getElementById('support-feedback-form');
+    feedbackForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('feedback-name')?.value;
+      const subject = document.getElementById('feedback-subject')?.value;
+      const msg = document.getElementById('feedback-msg')?.value;
+      if (name && msg) {
+        this.showToast(this.currentLanguage === 'hi' ? "प्रतिक्रिया सफलतापूर्वक सबमिट की गई!" : this.currentLanguage === 'mr' ? "अभिप्राय यशस्वीरित्या सबमिट केला!" : "Feedback submitted successfully!");
+        feedbackForm.reset();
+      }
+    });
   }
 
   // ── Keyboard Shortcuts ───────────────────────────────────
@@ -1500,6 +1894,125 @@ class TransitApp {
     setInterval(update, 30000);
   }
 
+  // ── Page Switcher & Routing ──────────────────────────────
+  switchPage(pageId) {
+    document.querySelectorAll('#app-nav .nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.page === pageId);
+    });
+
+    const mainView = document.getElementById('main');
+    const pages = document.querySelectorAll('.app-page');
+    
+    pages.forEach(p => p.style.display = 'none');
+
+    if (pageId === 'map') {
+      mainView.style.display = 'flex';
+      if (this.map) {
+        setTimeout(() => {
+          this.map.invalidateSize();
+        }, 100);
+      }
+    } else {
+      mainView.style.display = 'none';
+      const activePage = document.getElementById(`page-${pageId}`);
+      if (activePage) {
+        activePage.style.display = 'block';
+        if (pageId === 'analytics') {
+          this.updateAnalytics();
+        }
+      }
+    }
+    
+    // Auto-expand/collapse mobile view styling
+    document.getElementById('sidebar')?.classList.remove('expanded');
+  }
+
+  // ── Analytics Methods ────────────────────────────────────
+  populateAnalyticsRouteFilter() {
+    const routeFilter = document.getElementById('analytics-route-filter');
+    if (!routeFilter) return;
+    const city = CITIES[this.currentCityId];
+    routeFilter.innerHTML = '<option value="all">All Routes</option>' + 
+      city.routes.map(r => `<option value="${r.id}">Route ${r.number}</option>`).join('');
+  }
+
+  updateAnalytics() {
+    const filterVal = document.getElementById('analytics-route-filter')?.value || 'all';
+    const city = CITIES[this.currentCityId];
+    if (!city) return;
+    
+    let routes = city.routes;
+    if (filterVal !== 'all') {
+      routes = city.routes.filter(r => r.id === filterVal);
+    }
+    
+    if (routes.length === 0) return;
+
+    let totalSpeed = 0;
+    let totalDelay = 0;
+    let totalReliability = 0;
+    let totalBusCount = 0;
+
+    routes.forEach(r => {
+      totalSpeed += r.speed;
+      const seed = r.number.charCodeAt(0) + r.number.charCodeAt(r.number.length - 1);
+      const delay = 0.8 + Math.abs(Math.sin(seed)) * 1.6;
+      const reliability = 93.5 + Math.abs(Math.cos(seed)) * 5.0;
+      totalDelay += delay;
+      totalReliability += reliability;
+      totalBusCount += r.busCount;
+    });
+
+    const avgSpeed = (totalSpeed / routes.length).toFixed(1);
+    const avgDelay = (totalDelay / routes.length).toFixed(1);
+    const avgReliability = (totalReliability / routes.length).toFixed(1);
+    const emissions = Math.round(totalBusCount * 41.2);
+
+    const speedEl = document.getElementById('an-val-speed');
+    if (speedEl) speedEl.textContent = `${avgSpeed} km/h`;
+    
+    const delayEl = document.getElementById('an-val-delay');
+    if (delayEl) {
+      delayEl.textContent = `+${avgDelay} min`;
+      delayEl.style.color = parseFloat(avgDelay) > 1.8 ? 'var(--red)' : 'var(--yellow)';
+    }
+    
+    const relEl = document.getElementById('an-val-reliability');
+    if (relEl) relEl.textContent = `${avgReliability}%`;
+    
+    const emEl = document.getElementById('an-val-emissions');
+    if (emEl) emEl.textContent = `${emissions} kg`;
+
+    const chart = document.getElementById('bar-chart-adherence');
+    if (chart) {
+      chart.innerHTML = routes.map(r => {
+        const seed = r.number.charCodeAt(0) + r.number.charCodeAt(r.number.length - 1);
+        const rel = Math.round(91 + Math.abs(Math.sin(seed * 2.3)) * 8);
+        const bg = rel >= 95 ? 'var(--green)' : 'var(--yellow)';
+        return `
+          <div class="bar-col">
+            <div class="bar-val-label">${rel}%</div>
+            <div class="bar-fill-track"><div class="bar-fill-amount" style="height:${rel}%; background:${bg}"></div></div>
+            <div class="bar-axis-name">${r.number}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // ── Eco Savings Counter ──────────────────────────────────
+  startEcoSavingsCounter() {
+    let val = 12408.20;
+    const el = document.getElementById('eco-savings-counter');
+    if (!el) return;
+    
+    if (this._ecoInterval) clearInterval(this._ecoInterval);
+    this._ecoInterval = setInterval(() => {
+      val += 0.02 + Math.random() * 0.03;
+      el.textContent = `${val.toLocaleString(this.currentLanguage === 'hi' ? 'hi-IN' : this.currentLanguage === 'mr' ? 'mr-IN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg CO2`;
+    }, 1000);
+  }
+
   // ── Toast Notifications ──────────────────────────────────
 
   showToast(message) {
@@ -1512,6 +2025,593 @@ class TransitApp {
       toast.classList.add('out');
       setTimeout(() => toast.remove(), 250);
     }, 3000);
+  }
+
+  // ── Translation Engine ──────────────────────────────────
+  switchLanguage(lang) {
+    if (!TRANSLATIONS[lang]) return;
+    this.currentLanguage = lang;
+    const dict = TRANSLATIONS[lang];
+
+    // Header updates
+    const logoLink = document.getElementById('logo-link');
+    if (logoLink) {
+      logoLink.innerHTML = `<div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="1" y="3" width="22" height="16" rx="3"/><path d="M1 10h22"/><circle cx="7" cy="21" r="2"/><circle cx="17" cy="21" r="2"/>
+        </svg>
+      </div>
+      Transit<span>${dict.logoTrack}</span>`;
+    }
+
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.placeholder = dict.searchPlaceholder;
+
+    const lbmToggle = document.getElementById('lbm-toggle');
+    if (lbmToggle) {
+      lbmToggle.querySelector('span:not(.toggle-dot)').textContent = this.lowBandwidth ? dict.lowBwModeBadge : "Low-BW";
+    }
+
+    // Sidebar tab buttons
+    document.getElementById('tab-routes').textContent = dict.allRoutes;
+    document.getElementById('tab-buses').textContent = dict.activeBuses;
+    document.getElementById('tab-planner').textContent = dict.planYourTrip;
+    document.getElementById('tab-tickets').textContent = dict.tickets;
+    document.getElementById('tab-alerts').textContent = dict.alerts;
+
+    // Sidebar panels labels
+    document.querySelector('#panel-routes .section-label').textContent = dict.allRoutesLabel;
+    document.querySelector('#panel-buses .section-label').textContent = dict.activeBusesLabel;
+    document.querySelector('#panel-planner .section-label').textContent = dict.planYourTripLabel;
+    document.querySelector('#panel-tickets .section-label').textContent = dict.bookTransitPassLabel;
+    document.querySelector('#panel-alerts .section-label').textContent = dict.serviceAlertsLabel;
+
+    // Planner labels
+    document.querySelector('label[for="planner-from"]').textContent = dict.fromLabel;
+    document.querySelector('label[for="planner-to"]').textContent = dict.toLabel;
+    document.getElementById('planner-go-btn').textContent = dict.findRoutesBtn;
+
+    // Ticket labels
+    document.querySelector('label[for="ticket-route"]').textContent = dict.selectRouteLabel;
+    document.querySelector('label[for="ticket-from"]').textContent = dict.fromStopLabel;
+    document.querySelector('label[for="ticket-to"]').textContent = dict.toStopLabel;
+    document.querySelector('.ticket-fare-estimate span').textContent = dict.estFareLabel;
+    document.getElementById('ticket-book-btn').textContent = dict.bookPassBtnLabel;
+
+    // Digital Pass Labels
+    document.querySelector('.ticket-brand').textContent = `TransitTrack ${dict.tickets}`;
+    document.querySelector('.ticket-col:nth-child(1) .t-lbl').textContent = dict.passengerLabel;
+    document.querySelectorAll('.ticket-col .t-lbl')[1].textContent = dict.routeLabel;
+    document.querySelectorAll('.ticket-col .t-lbl')[2].textContent = dict.fromStopPass;
+    document.querySelectorAll('.ticket-col .t-lbl')[3].textContent = dict.toStopPass;
+    document.querySelectorAll('.ticket-col .t-lbl')[4].textContent = dict.dateLabel;
+    document.querySelectorAll('.ticket-col .t-lbl')[5].textContent = dict.farePaidLabel;
+    document.getElementById('ticket-cancel-btn').textContent = dict.cancelPassBtn;
+
+    // Map traffic label
+    const trafficLabel = document.getElementById('btn-traffic-label');
+    if (trafficLabel) trafficLabel.textContent = dict.trafficBtn;
+
+    // Translate top navigation link text
+    const navMap = document.getElementById('nav-map');
+    if (navMap) navMap.textContent = dict.navMap;
+    const navAnaly = document.getElementById('nav-analytics');
+    if (navAnaly) navAnaly.textContent = dict.navAnalytics;
+    const navSupp = document.getElementById('nav-support');
+    if (navSupp) navSupp.textContent = dict.navSupport;
+    const navAb = document.getElementById('nav-about');
+    if (navAb) navAb.textContent = dict.navAbout;
+
+    // Translate Analytics page text
+    const analyTitle = document.getElementById('analy-title');
+    if (analyTitle) analyTitle.textContent = dict.analyTitle;
+    const analySubtitle = document.getElementById('analy-subtitle');
+    if (analySubtitle) analySubtitle.textContent = dict.analySubtitle;
+    const lblSpeed = document.getElementById('an-lbl-speed');
+    if (lblSpeed) lblSpeed.textContent = dict.lblSpeed;
+    const lblDelay = document.getElementById('an-lbl-delay');
+    if (lblDelay) lblDelay.textContent = dict.lblDelay;
+    const lblReliability = document.getElementById('an-lbl-reliability');
+    if (lblReliability) lblReliability.textContent = dict.lblReliability;
+    const lblEmissions = document.getElementById('an-lbl-emissions');
+    if (lblEmissions) lblEmissions.textContent = dict.lblEmissions;
+    const lblCongestion = document.getElementById('chart-lbl-congestion');
+    if (lblCongestion) lblCongestion.textContent = dict.lblCongestion;
+    const lblHeadway = document.getElementById('chart-lbl-headway');
+    if (lblHeadway) lblHeadway.textContent = dict.lblHeadway;
+
+    // Translate Support page text
+    const faqTitle = document.getElementById('support-faq-title');
+    if (faqTitle) faqTitle.textContent = dict.faqTitle;
+    const feedbackTitle = document.getElementById('support-form-title');
+    if (feedbackTitle) feedbackTitle.textContent = dict.feedbackTitle;
+    const lblSubject = document.getElementById('lbl-feedback-subject');
+    if (lblSubject) lblSubject.textContent = dict.lblSubject;
+    const lblName = document.getElementById('lbl-feedback-name');
+    if (lblName) lblName.textContent = dict.lblName;
+    const lblMsg = document.getElementById('lbl-feedback-msg');
+    if (lblMsg) lblMsg.textContent = dict.lblMsg;
+    const btnSubmit = document.getElementById('feedback-submit-btn');
+    if (btnSubmit) btnSubmit.textContent = dict.currentLanguage === 'hi' ? 'अनुरोध सबमिट करें' : dict.currentLanguage === 'mr' ? 'विनंती सबमिट करा' : 'Submit Request';
+
+    // Translate About page text
+    const aboutTitle = document.getElementById('about-title');
+    if (aboutTitle) aboutTitle.textContent = dict.aboutTitle;
+    const aboutSubtitle = document.getElementById('about-subtitle');
+    if (aboutSubtitle) aboutSubtitle.textContent = dict.aboutSubtitle;
+    const ecoLbl = document.getElementById('eco-lbl');
+    if (ecoLbl) ecoLbl.textContent = dict.aboutEcoSavings;
+
+    // Refresh dynamic analytics values & carbon counter formatting
+    this.updateAnalytics();
+    this.startEcoSavingsCounter();
+
+    // Refresh dynamic layouts
+    const city = CITIES[this.currentCityId];
+    if (city) {
+      this.updateCityHeader(city);
+      this.renderSidebar(city);
+    }
+    const currentBuses = this.tracker.getSnapshot();
+    this.updateSidebarBuses(currentBuses);
+    this.updateLBMView(currentBuses);
+    this.renderFavorites();
+
+    this.showToast(lang === 'hi' ? 'भाषा बदली गई: हिन्दी' : lang === 'mr' ? 'भाषा बदलली: मराठी' : 'Language switched to English');
+  }
+
+  // ── Ticket Pass Generator ──────────────────────────────
+  populateTicketSelectors(city) {
+    const routeSelect = document.getElementById('ticket-route');
+    const fromSelect = document.getElementById('ticket-from');
+    const toSelect = document.getElementById('ticket-to');
+    if (!routeSelect || !fromSelect || !toSelect) return;
+
+    routeSelect.innerHTML = city.routes.map(r => `<option value="${r.id}">Route ${r.number} — ${r.name}</option>`).join('');
+    
+    const updateStops = () => {
+      const routeId = routeSelect.value;
+      const route = city.routes.find(r => r.id === routeId);
+      if (!route) return;
+      
+      const stopsHtml = route.stops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      fromSelect.innerHTML = stopsHtml;
+      toSelect.innerHTML = stopsHtml;
+      if (route.stops.length > 1) {
+        toSelect.selectedIndex = route.stops.length - 1;
+      }
+      this.updateTicketFare(route);
+    };
+
+    routeSelect.addEventListener('change', updateStops);
+    fromSelect.addEventListener('change', () => this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value)));
+    toSelect.addEventListener('change', () => this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value)));
+    
+    updateStops();
+  }
+
+  updateTicketFare(route) {
+    const fromSelect = document.getElementById('ticket-from');
+    const toSelect = document.getElementById('ticket-to');
+    const fareEl = document.getElementById('ticket-fare-amount');
+    if (!fromSelect || !toSelect || !fareEl || !route) return;
+
+    const idx1 = route.stops.findIndex(s => s.id === fromSelect.value);
+    const idx2 = route.stops.findIndex(s => s.id === toSelect.value);
+    if (idx1 === -1 || idx2 === -1 || idx1 === idx2) {
+      fareEl.textContent = `₹0`;
+      return;
+    }
+    const count = Math.abs(idx2 - idx1);
+    const fare = Math.max(5, count * 3 + 2);
+    fareEl.textContent = `₹${fare}`;
+  }
+
+  startPassBooking() {
+    const routeSelect = document.getElementById('ticket-route');
+    const fromSelect = document.getElementById('ticket-from');
+    const toSelect = document.getElementById('ticket-to');
+    const city = CITIES[this.currentCityId];
+    const route = city.routes.find(r => r.id === routeSelect.value);
+
+    const fromStop = route.stops.find(s => s.id === fromSelect.value);
+    const toStop = route.stops.find(s => s.id === toSelect.value);
+
+    if (fromStop.id === toStop.id) {
+      this.showToast("From and To stops cannot be the same");
+      return;
+    }
+
+    const fareText = document.getElementById('ticket-fare-amount').textContent;
+    this._pendingBooking = {
+      routeNumber: route.number,
+      routeColor: route.color,
+      fromName: fromStop.name,
+      toName: toStop.name,
+      fare: fareText,
+      date: new Date().toLocaleDateString(this.currentLanguage === 'hi' ? 'hi-IN' : this.currentLanguage === 'mr' ? 'mr-IN' : 'en-US')
+    };
+
+    // Show mock UPI payment modal
+    const modal = document.getElementById('payment-modal');
+    const statusMsg = document.getElementById('payment-status-message');
+    const dict = TRANSLATIONS[this.currentLanguage];
+    modal.style.display = 'flex';
+    statusMsg.textContent = dict.waitingChoice;
+    document.getElementById('payment-title-label').textContent = dict.upiTitle;
+    document.getElementById('payment-cancel-btn').textContent = dict.cancelPaymentBtn;
+  }
+
+  processUPIPayment(appName) {
+    const statusMsg = document.getElementById('payment-status-message');
+    const dict = TRANSLATIONS[this.currentLanguage];
+    statusMsg.innerHTML = `<span style="color:var(--accent)">Contacting ${appName}... Authorization pending...</span>`;
+    
+    // Disable clicks during mock payment
+    document.querySelectorAll('.pay-app').forEach(el => el.style.pointerEvents = 'none');
+
+    setTimeout(() => {
+      if (!this._pendingBooking) return; // cancelled
+      statusMsg.innerHTML = `<span style="color:var(--green)">Payment Successful! Generating pass...</span>`;
+      
+      setTimeout(() => {
+        this.generateDigitalPass();
+        document.getElementById('payment-modal').style.display = 'none';
+        document.querySelectorAll('.pay-app').forEach(el => el.style.pointerEvents = '');
+      }, 1000);
+    }, 1500);
+  }
+
+  cancelPayment() {
+    this._pendingBooking = null;
+    document.getElementById('payment-modal').style.display = 'none';
+    document.querySelectorAll('.pay-app').forEach(el => el.style.pointerEvents = '');
+    this.showToast("Payment cancelled");
+  }
+
+  generateDigitalPass() {
+    if (!this._pendingBooking) return;
+    this.activePass = this._pendingBooking;
+    this._pendingBooking = null;
+
+    // Save active pass to state
+    document.getElementById('pass-route-badge').textContent = this.activePass.routeNumber;
+    document.getElementById('pass-route-badge').style.background = this.activePass.routeColor + '20';
+    document.getElementById('pass-route-badge').style.color = this.activePass.routeColor;
+    document.getElementById('pass-from-stop').textContent = this.activePass.fromName;
+    document.getElementById('pass-to-stop').textContent = this.activePass.toName;
+    document.getElementById('pass-date').textContent = this.activePass.date;
+    document.getElementById('pass-fare').textContent = this.activePass.fare;
+
+    // Render Canvas QR
+    this.drawMockQR('ticket-qr', `TransitPass|${this.activePass.routeNumber}|${this.activePass.fromName}|${this.activePass.toName}|${this.activePass.fare}`);
+
+    document.getElementById('tickets-booking-view').style.display = 'none';
+    document.getElementById('tickets-pass-view').style.display = 'block';
+    this.showToast("Pass generated successfully");
+  }
+
+  cancelPass() {
+    this.activePass = null;
+    document.getElementById('tickets-pass-view').style.display = 'none';
+    document.getElementById('tickets-booking-view').style.display = 'block';
+    this.showToast("Pass cancelled");
+  }
+
+  drawMockQR(canvasId, textData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+
+    const modules = 21;
+    const scale = size / modules;
+
+    const drawFinder = (x, y) => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x * scale, y * scale, 7 * scale, 7 * scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect((x + 1) * scale, (y + 1) * scale, 5 * scale, 5 * scale);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect((x + 2) * scale, (y + 2) * scale, 3 * scale, 3 * scale);
+    };
+
+    drawFinder(0, 0);
+    drawFinder(14, 0);
+    drawFinder(0, 14);
+
+    let hash = 0;
+    for (let i = 0; i < textData.length; i++) {
+      hash += textData.charCodeAt(i);
+    }
+
+    ctx.fillStyle = '#000000';
+    for (let r = 0; r < modules; r++) {
+      for (let c = 0; c < modules; c++) {
+        if (r < 8 && c < 8) continue;
+        if (r < 8 && c >= 13) continue;
+        if (r >= 13 && c < 8) continue;
+
+        const bit = Math.abs(Math.sin((r * 13 + c * 37 + hash) * 1.5)) > 0.5;
+        if (bit) {
+          ctx.fillRect(c * scale, r * scale, scale, scale);
+        }
+      }
+    }
+  }
+
+  // ── Stop departures detail panel ──────────────────────────
+  showStopDetails(stop, route) {
+    const dict = TRANSLATIONS[this.currentLanguage];
+    document.getElementById('sd-stop-name').textContent = stop.name;
+    document.getElementById('sd-stop-city').textContent = CITIES[this.currentCityId].name;
+
+    // Display Facilities
+    const facilitiesList = document.getElementById('sd-facilities');
+    facilitiesList.innerHTML = '';
+    const facilityDict = {
+      parking: { label: this.currentLanguage === 'hi' ? 'पार्किंग' : this.currentLanguage === 'mr' ? 'पार्किंग' : 'Parking', icon: AMENITY_ICONS.parking },
+      restroom: { label: this.currentLanguage === 'hi' ? 'शौचालय' : this.currentLanguage === 'mr' ? 'शौचालय' : 'Restrooms', icon: AMENITY_ICONS.restroom },
+      food: { label: this.currentLanguage === 'hi' ? 'भोजन' : this.currentLanguage === 'mr' ? 'खाद्यपदार्थ' : 'Dining', icon: AMENITY_ICONS.food }
+    };
+
+    stop.amenities.forEach(a => {
+      const item = facilityDict[a];
+      if (!item) return;
+      const card = document.createElement('div');
+      card.className = 'sd-facility-card';
+      card.innerHTML = `${item.icon}<span>${item.label}</span>`;
+      facilitiesList.appendChild(card);
+    });
+
+    if (stop.amenities.length === 0) {
+      facilitiesList.innerHTML = `<div style="grid-column: span 3; color: var(--text-dim); font-size: 0.76rem; text-align: center;">No local facilities at this stop</div>`;
+    }
+
+    // Departure list
+    const depList = document.getElementById('sd-departures');
+    depList.innerHTML = '';
+
+    const busesHeading = Array.from(this.busState.values()).filter(
+      b => b.routeId === route.id && b.nextStop === stop.name && b.nextStopEta != null
+    );
+
+    if (busesHeading.length > 0) {
+      busesHeading.forEach(b => {
+        const etaText = b.nextStopEta < 0.5 ? dict.arrivingNowLabel : `${dict.arrivingInLabel} ${Math.round(b.nextStopEta)} min`;
+        const div = document.createElement('div');
+        div.className = 'sd-dep-row';
+        div.innerHTML = `
+          <div class="sd-dep-route-info">
+            <span class="sd-dep-badge" style="background:${b.routeColor}18;color:${b.routeColor}">${b.routeNumber}</span>
+            <span class="sd-dep-name">${b.id}</span>
+          </div>
+          <span class="sd-dep-eta">${etaText}</span>
+        `;
+        depList.appendChild(div);
+      });
+    } else {
+      // scheduled fallback
+      const div = document.createElement('div');
+      div.className = 'sd-dep-row';
+      div.innerHTML = `
+        <div class="sd-dep-route-info">
+          <span class="sd-dep-badge" style="background:${route.color}18;color:${route.color}">${route.number}</span>
+          <span class="sd-dep-name">${dict.nextBusInLabel}</span>
+        </div>
+        <span class="sd-dep-eta">${route.frequency} min (Sched)</span>
+      `;
+      depList.appendChild(div);
+    }
+
+    // Tab view panel switching
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.getElementById('panel-stop-details').style.display = 'block';
+  }
+
+  closeStopDetails() {
+    document.getElementById('panel-stop-details').style.display = 'none';
+    // restore active tab
+    const activeTabBtn = document.querySelector('.sidebar-tab.active');
+    if (activeTabBtn) {
+      const panelId = `panel-${activeTabBtn.dataset.tab}`;
+      const panel = document.getElementById(panelId);
+      if (panel) panel.style.display = 'block';
+    }
+    this.resetRouteHighlight();
+  }
+
+  // ── Seat Layout map ──────────────────────────────────────
+  toggleSeatMap() {
+    const panel = document.getElementById('bic-seat-map-panel');
+    const btn = document.getElementById('bic-seat-map-btn');
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    btn.classList.toggle('active', isHidden);
+
+    if (isHidden && this.selectedBusId) {
+      const bus = this.busState.get(this.selectedBusId);
+      if (bus) this.renderSeatMap(bus);
+    }
+  }
+
+  renderSeatMap(bus) {
+    const grid = document.getElementById('seat-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const rows = 6;
+    let seed = 0;
+    for (let i = 0; i < bus.id.length; i++) seed += bus.id.charCodeAt(i);
+
+    const getSeatState = (seatNum) => {
+      if (seatNum === 1 || seatNum === 2) {
+        return 'accessible';
+      }
+      const prob = bus.crowdLevel === 0 ? 0.2 : bus.crowdLevel === 1 ? 0.6 : 0.9;
+      const val = Math.abs(Math.sin(seatNum * 43.1 + seed * 9.7));
+      return val < prob ? 'occupied' : 'available';
+    };
+
+    let seatCounter = 1;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 1; c <= 5; c++) {
+        if (c === 3) {
+          const aisle = document.createElement('div');
+          aisle.className = 'seat-aisle';
+          grid.appendChild(aisle);
+        } else {
+          const seat = document.createElement('div');
+          const seatNum = seatCounter++;
+          const state = getSeatState(seatNum);
+          
+          seat.className = `seat ${state}`;
+          seat.title = `Seat ${seatNum}: ${state === 'accessible' ? 'Handicap priority' : state === 'occupied' ? 'Occupied' : 'Vacant'}`;
+          
+          seat.addEventListener('click', () => {
+            if (state === 'available') {
+              seat.className = 'seat occupied';
+              seat.title = `Seat ${seatNum}: Occupied by you`;
+              this.showToast(`Seat ${seatNum} reserved temporarily`);
+            } else if (state === 'occupied' && seat.title.includes('you')) {
+              seat.className = 'seat available';
+              seat.title = `Seat ${seatNum}: Vacant`;
+              this.showToast(`Seat ${seatNum} reservation cancelled`);
+            } else {
+              this.showToast(`Seat ${seatNum} is currently ${state === 'accessible' ? 'priority seating' : 'occupied'}`);
+            }
+          });
+
+          grid.appendChild(seat);
+        }
+      }
+    }
+  }
+
+  // ── Onboarding Interactive Tour ──────────────────────────
+  startTour() {
+    this.tourStep = 0;
+    document.getElementById('tour-overlay').style.display = 'flex';
+    this.renderTourStep();
+  }
+
+  endTour() {
+    document.getElementById('tour-overlay').style.display = 'none';
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    this.showToast("App onboarding tour finished");
+  }
+
+  nextTourStep() {
+    this.tourStep++;
+    if (this.tourStep >= 5) {
+      this.endTour();
+    } else {
+      this.renderTourStep();
+    }
+  }
+
+  renderTourStep() {
+    const dict = TRANSLATIONS[this.currentLanguage];
+    const steps = [
+      {
+        title: dict.tourWelcomeTitle,
+        body: dict.tourWelcomeBody,
+        highlightId: 'logo-link'
+      },
+      {
+        title: dict.tourSearchTitle,
+        body: dict.tourSearchBody,
+        highlightId: 'header-search'
+      },
+      {
+        title: dict.tourMapTitle,
+        body: dict.tourMapBody,
+        highlightId: 'map-controls'
+      },
+      {
+        title: dict.tourDeparturesTitle,
+        body: dict.tourDeparturesBody,
+        highlightId: 'sidebar'
+      },
+      {
+        title: dict.tourPassTitle,
+        body: dict.tourPassBody,
+        highlightId: 'tab-tickets'
+      }
+    ];
+
+    const step = steps[this.tourStep];
+    if (!step) return;
+
+    document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+
+    const highlightTarget = document.getElementById(step.highlightId);
+    if (highlightTarget) {
+      highlightTarget.classList.add('tour-highlight');
+      if (step.highlightId === 'tab-tickets') {
+        highlightTarget.click();
+      }
+    }
+
+    document.getElementById('tour-step-title').textContent = step.title;
+    document.getElementById('tour-body-text').textContent = step.body;
+    document.getElementById('tour-step-progress').textContent = `Step ${this.tourStep + 1} of 5`;
+    document.getElementById('tour-next-btn').textContent = this.tourStep === 4 ? (this.currentLanguage === 'hi' ? 'पूरा करें' : this.currentLanguage === 'mr' ? 'पूर्ण करा' : 'Finish') : (this.currentLanguage === 'hi' ? 'आगे' : this.currentLanguage === 'mr' ? 'पुढे' : 'Next');
+  }
+
+  // ── Route refresh logic ──────────────────────────────────
+  refreshRouteLines() {
+    const city = CITIES[this.currentCityId];
+    if (!city) return;
+    city.routes.forEach(route => {
+      const line = this.routeLines.get(route.id);
+      if (!line) return;
+      if (this.trafficOverlayActive) {
+        let trafficColor = 'var(--green)';
+        if (route.number.includes('1') || route.number.includes('51')) {
+          trafficColor = 'var(--red)';
+        } else if (route.number.includes('2') || route.number.includes('52')) {
+          trafficColor = 'var(--yellow)';
+        }
+        line.setStyle({ color: trafficColor, opacity: 0.8, weight: 4.5 });
+      } else {
+        line.setStyle({ color: route.color, opacity: 0.5, weight: 3 });
+      }
+    });
+  }
+
+  // ── Map Theme update ─────────────────────────────────────
+  setMapTheme(themeId) {
+    if (!this.tileLayers[themeId] || !this.map) return;
+    Object.values(this.tileLayers).forEach(layer => {
+      if (this.map.hasLayer(layer)) {
+        this.map.removeLayer(layer);
+      }
+    });
+    this.tileLayers[themeId].addTo(this.map);
+    this.mapTheme = themeId;
+
+    const container = this.map.getContainer();
+    if (themeId === 'dark') {
+      container.classList.add('dark-map');
+    } else {
+      container.classList.remove('dark-map');
+    }
+
+    document.querySelectorAll('#map-theme-dropdown .theme-opt').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.theme === themeId);
+    });
+    this.showToast(this.currentLanguage === 'hi' ? `नक्शा शैली बदली गई` : this.currentLanguage === 'mr' ? `नकाशा शैली बदलली` : `Map theme updated: ${themeId}`);
+  }
+
+  toggleTrafficOverlay() {
+    this.trafficOverlayActive = !this.trafficOverlayActive;
+    const btn = document.getElementById('btn-traffic-toggle');
+    btn.classList.toggle('active', this.trafficOverlayActive);
+    this.refreshRouteLines();
+    this.showToast(this.trafficOverlayActive ? "Traffic overlay active" : "Traffic overlay hidden");
   }
 }
 

@@ -61,6 +61,20 @@
       </span>
     </div>
 
+    <!-- Language Selector -->
+    <div id="lang-selector-wrap">
+      <select id="lang-selector" aria-label="Select language">
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="mr">मराठी</option>
+      </select>
+      <span class="selector-arrow">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </span>
+    </div>
+
     <!-- Search -->
     <div id="header-search">
       <span class="search-icon">
@@ -72,8 +86,21 @@
       <div id="search-results" role="listbox" aria-label="Search results"></div>
     </div>
 
+    <!-- Top Navigation Bar -->
+    <nav id="app-nav">
+      <button class="nav-item active" data-page="map" id="nav-map">Live Map</button>
+      <button class="nav-item" data-page="analytics" id="nav-analytics">Analytics</button>
+      <button class="nav-item" data-page="support" id="nav-support">Support</button>
+      <button class="nav-item" data-page="about" id="nav-about">About</button>
+    </nav>
+
     <!-- Actions -->
     <div class="header-actions">
+      <button class="icon-btn" id="tour-toggle-btn" title="App Tour" aria-label="Start App Tour">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
       <button id="lbm-toggle" title="Toggle low-bandwidth mode" aria-pressed="false">
         <span class="toggle-dot"></span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -138,6 +165,7 @@
         <button class="sidebar-tab active" id="tab-routes" role="tab" aria-selected="true" data-tab="routes">Routes</button>
         <button class="sidebar-tab" id="tab-buses" role="tab" aria-selected="false" data-tab="buses">Live Buses</button>
         <button class="sidebar-tab" id="tab-planner" role="tab" aria-selected="false" data-tab="planner">Trip Planner</button>
+        <button class="sidebar-tab" id="tab-tickets" role="tab" aria-selected="false" data-tab="tickets">Tickets</button>
         <button class="sidebar-tab" id="tab-alerts" role="tab" aria-selected="false" data-tab="alerts">Alerts</button>
       </div>
 
@@ -179,13 +207,106 @@
           <div id="trip-results" class="trip-results"></div>
         </div>
 
+        <!-- Tickets Tab -->
+        <div id="panel-tickets" class="tab-panel" style="display:none">
+          <div class="section-label">Book Transit Pass</div>
+          <div class="tickets-booking-view" id="tickets-booking-view">
+            <div class="planner-form">
+              <div class="planner-field">
+                <label for="ticket-route">Select Route</label>
+                <select id="ticket-route"></select>
+              </div>
+              <div class="planner-field">
+                <label for="ticket-from">From Stop</label>
+                <select id="ticket-from"></select>
+              </div>
+              <div class="planner-field">
+                <label for="ticket-to">To Stop</label>
+                <select id="ticket-to"></select>
+              </div>
+              <div class="ticket-fare-estimate">
+                <span>Estimated Fare:</span>
+                <strong id="ticket-fare-amount">₹0</strong>
+              </div>
+              <button class="planner-go" id="ticket-book-btn">Book Digital Pass</button>
+            </div>
+          </div>
+          
+          <div class="tickets-pass-view" id="tickets-pass-view" style="display:none">
+            <div class="digital-ticket">
+              <div class="ticket-header">
+                <div class="ticket-brand">TransitTrack Pass</div>
+                <div class="ticket-valid-tag">ACTIVE</div>
+              </div>
+              <div class="ticket-main">
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">Passenger</span>
+                    <strong class="t-val">COMMUTER</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">Route</span>
+                    <strong class="t-val" id="pass-route-badge">N1</strong>
+                  </div>
+                </div>
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">From</span>
+                    <strong class="t-val" id="pass-from-stop">Station</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">To</span>
+                    <strong class="t-val" id="pass-to-stop">Panchavati</strong>
+                  </div>
+                </div>
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">Date</span>
+                    <strong class="t-val" id="pass-date">20-06-2026</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">Fare Paid</span>
+                    <strong class="t-val" id="pass-fare">₹10</strong>
+                  </div>
+                </div>
+                <div class="ticket-qr-wrap">
+                  <canvas id="ticket-qr" width="120" height="120"></canvas>
+                  <div class="qr-overlay-text">SCAN FOR ENTRY</div>
+                </div>
+              </div>
+              <div class="ticket-footer-strip">
+                <button class="ticket-cancel-btn" id="ticket-cancel-btn">Cancel Pass</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Alerts Tab -->
         <div id="panel-alerts" class="tab-panel" style="display:none">
           <div class="section-label">Service Alerts</div>
           <div id="alerts-list" style="padding:0 10px"></div>
         </div>
 
-      </div><!-- /sidebar-content -->
+        <!-- Stop Details View (Departure Board) -->
+        <div id="panel-stop-details" class="tab-panel" style="display:none">
+          <div class="stop-details-header">
+            <button class="stop-details-back" id="stop-details-back-btn" title="Back">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+              </svg>
+            </button>
+            <div class="stop-details-meta">
+              <div id="sd-stop-name" class="stop-details-title">CBS Mahamarg</div>
+              <div id="sd-stop-city" class="stop-details-city">Nashik</div>
+            </div>
+          </div>
+          <div class="stop-details-body">
+            <div class="section-label">Stop Facilities</div>
+            <div id="sd-facilities" class="sd-facilities-grid"></div>
+            <div class="section-label" style="margin-top:16px">Departure Board (Live ETAs)</div>
+            <div id="sd-departures" class="sd-departures-list"></div>
+          </div>
+        </div>
     </aside><!-- /sidebar -->
 
     <!-- Map -->
@@ -276,7 +397,54 @@
             <div class="crowd-seg"></div>
           </div>
         </div>
+        <div class="bic-seat-map-toggle-wrap">
+          <button id="bic-seat-map-btn" class="bic-btn-secondary" title="View Seat Layout">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/>
+            </svg>
+            <span>Seat Layout</span>
+          </button>
+        </div>
+        <div id="bic-seat-map-panel" class="bic-seat-map-panel" style="display:none">
+          <div class="seat-map-legend">
+            <span class="legend-item"><span class="legend-dot seat-available"></span>Empty</span>
+            <span class="legend-item"><span class="legend-dot seat-occupied"></span>Full</span>
+            <span class="legend-item"><span class="legend-dot seat-accessible"></span>Accessible</span>
+          </div>
+          <div class="bus-interior">
+            <div class="bus-driver">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0-5.5 1.5M12 22a10 10 0 0 1-5.5-1.5"/>
+              </svg>
+            </div>
+            <div id="seat-grid" class="seat-grid"></div>
+          </div>
+        </div>
       </div><!-- /bus-info-card -->
+
+      <!-- Floating Map controls -->
+      <div id="map-controls">
+        <button class="map-ctrl-btn" id="btn-traffic-toggle" title="Toggle traffic congestion layer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          <span id="btn-traffic-label">Traffic</span>
+        </button>
+        <div class="map-theme-wrap">
+          <button class="map-ctrl-btn" id="btn-theme-menu" title="Select Map Style">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </button>
+          <div class="map-theme-dropdown" id="map-theme-dropdown">
+            <button class="theme-opt active" data-theme="dark">Dark Transit</button>
+            <button class="theme-opt" data-theme="light">Standard Streets</button>
+            <button class="theme-opt" data-theme="satellite">Satellite View</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Alert Ticker -->
       <div id="alert-ticker">
@@ -296,6 +464,200 @@
     </div>
 
   </div><!-- /main -->
+
+  <!-- Analytics Page -->
+  <div id="page-analytics" class="app-page" style="display:none">
+    <div class="page-container">
+      <div class="page-header-block">
+        <div>
+          <h1 id="analy-title" class="page-title">Transit Analytics Dashboard</h1>
+          <p id="analy-subtitle" class="page-subtitle">Real-time scheduling adherence and route logistics metrics.</p>
+        </div>
+        <div class="analytics-filter">
+          <select id="analytics-route-filter" aria-label="Filter by Route">
+            <option value="all">All Routes</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="analytics-stats-grid">
+        <div class="analytics-stat-card">
+          <span class="an-stat-label" id="an-lbl-speed">Average Operational Speed</span>
+          <strong class="an-stat-value" id="an-val-speed">23 km/h</strong>
+        </div>
+        <div class="analytics-stat-card">
+          <span class="an-stat-label" id="an-lbl-delay">Average Route Delay</span>
+          <strong class="an-stat-value" id="an-val-delay" style="color:var(--yellow)">+1.4 min</strong>
+        </div>
+        <div class="analytics-stat-card">
+          <span class="an-stat-label" id="an-lbl-reliability">Reliability Index</span>
+          <strong class="an-stat-value" id="an-val-reliability" style="color:var(--green)">96.4%</strong>
+        </div>
+        <div class="analytics-stat-card">
+          <span class="an-stat-label" id="an-lbl-emissions">CO2 Offset Today</span>
+          <strong class="an-stat-value" id="an-val-emissions" style="color:var(--accent)">412 kg</strong>
+        </div>
+      </div>
+
+      <div class="analytics-charts-grid">
+        <div class="chart-container-card">
+          <h3 id="chart-lbl-congestion" class="chart-title">Hourly Congestion Profile</h3>
+          <div class="svg-chart-wrap">
+            <svg class="analytics-svg-chart" viewBox="0 0 400 200" id="svg-congestion-chart">
+              <!-- Grid lines -->
+              <line x1="40" y1="20" x2="380" y2="20" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+              <line x1="40" y1="70" x2="380" y2="70" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+              <line x1="40" y1="120" x2="380" y2="120" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+              <line x1="40" y1="170" x2="380" y2="170" stroke="var(--border)" stroke-width="1.5"/>
+              <line x1="40" y1="20" x2="40" y2="170" stroke="var(--border)" stroke-width="1.5"/>
+              
+              <!-- Y-Axis labels -->
+              <text x="15" y="25" fill="var(--text-dim)" font-size="9" text-anchor="middle">Heavy</text>
+              <text x="15" y="75" fill="var(--text-dim)" font-size="9" text-anchor="middle">Mod</text>
+              <text x="15" y="125" fill="var(--text-dim)" font-size="9" text-anchor="middle">Light</text>
+              <text x="15" y="172" fill="var(--text-dim)" font-size="9" text-anchor="middle">Clear</text>
+
+              <!-- X-Axis labels -->
+              <text x="40" y="188" fill="var(--text-dim)" font-size="9" text-anchor="middle">06:00</text>
+              <text x="125" y="188" fill="var(--text-dim)" font-size="9" text-anchor="middle">10:00</text>
+              <text x="210" y="188" fill="var(--text-dim)" font-size="9" text-anchor="middle">14:00</text>
+              <text x="295" y="188" fill="var(--text-dim)" font-size="9" text-anchor="middle">18:00</text>
+              <text x="380" y="188" fill="var(--text-dim)" font-size="9" text-anchor="middle">22:00</text>
+
+              <!-- Line path -->
+              <path d="M 40 160 Q 82.5 130 125 45 T 210 100 T 295 30 T 380 150" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Data points -->
+              <circle cx="125" cy="45" r="4" fill="var(--accent)"/>
+              <circle cx="295" cy="30" r="4" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="chart-container-card">
+          <h3 id="chart-lbl-headway" class="chart-title">Route Headway Adherence</h3>
+          <div class="bar-chart-wrap" id="bar-chart-adherence">
+            <div class="bar-col">
+              <div class="bar-val-label">98%</div>
+              <div class="bar-fill-track"><div class="bar-fill-amount" style="height:98%; background:var(--green)"></div></div>
+              <div class="bar-axis-name">N1</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-val-label">94%</div>
+              <div class="bar-fill-track"><div class="bar-fill-amount" style="height:94%; background:var(--green)"></div></div>
+              <div class="bar-axis-name">N2</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-val-label">88%</div>
+              <div class="bar-fill-track"><div class="bar-fill-amount" style="height:88%; background:var(--yellow)"></div></div>
+              <div class="bar-axis-name">N3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Support Page -->
+  <div id="page-support" class="app-page" style="display:none">
+    <div class="page-container support-page-layout">
+      <div class="support-faq-section">
+        <h1 id="support-faq-title" class="page-title" style="margin-bottom:14px">Frequently Asked Questions</h1>
+        <div class="faq-list">
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>How do I purchase a Digital Pass?</span>
+              <span class="faq-icon-arrow">+</span>
+            </div>
+            <div class="faq-answer">
+              Navigate to the 'Tickets' tab in the main sidebar, select your preferred route and stops, click 'Book Digital Pass', select a mock UPI app, and authorize the simulated payment to generate your pass.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>What is Low-Bandwidth Mode?</span>
+              <span class="faq-icon-arrow">+</span>
+            </div>
+            <div class="faq-answer">
+              Low-Bandwidth mode disabled heavy map loading and graphic tiles. It switches to a highly optimized, lightweight text-based arrivals board, ensuring accessibility even under poor 2G/3G network conditions.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-question">
+              <span>How accurate are the ETA countdowns?</span>
+              <span class="faq-icon-arrow">+</span>
+            </div>
+            <div class="faq-answer">
+              The ETAs are calculated dynamically in real time. We simulate current bus speeds, stop dwell times, and routes congestion values to ensure high precision countdown timers.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="support-form-section">
+        <h2 id="support-form-title" class="page-title" style="font-size:1.15rem; margin-bottom:8px">Submit Feedback / Report Delay</h2>
+        <form class="support-feedback-form" id="support-feedback-form" onsubmit="event.preventDefault();">
+          <div class="planner-field">
+            <label id="lbl-feedback-subject" for="feedback-subject">Subject</label>
+            <select id="feedback-subject" required>
+              <option value="general">General Feedback</option>
+              <option value="delay">Bus Delay Report</option>
+              <option value="payment">Payment Issue</option>
+              <option value="app">App Suggestion</option>
+            </select>
+          </div>
+          <div class="planner-field" style="margin-top:8px">
+            <label id="lbl-feedback-name" for="feedback-name">Your Name</label>
+            <input type="text" id="feedback-name" required placeholder="Enter name"/>
+          </div>
+          <div class="planner-field" style="margin-top:8px">
+            <label id="lbl-feedback-msg" for="feedback-msg">Details / Description</label>
+            <textarea id="feedback-msg" rows="4" required placeholder="Type details here..." style="width:100%; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:8px; color:var(--text); font-family:var(--font); outline:none; font-size:0.82rem; resize:none;"></textarea>
+          </div>
+          <button class="planner-go" id="feedback-submit-btn" style="margin-top:12px; width:100%">Submit Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Page -->
+  <div id="page-about" class="app-page" style="display:none">
+    <div class="page-container about-page-layout">
+      <div class="about-hero">
+        <h1 id="about-title" class="page-title" style="font-size:1.6rem; margin-bottom:6px">TransitTrack Smart Commuting</h1>
+        <p id="about-subtitle" class="page-subtitle">Pioneering real-time municipal logistics tracking for Indian tier-2 metropolitan transit agencies.</p>
+      </div>
+
+      <div class="about-eco-card">
+        <div class="eco-metrics">
+          <div class="eco-icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <div>
+            <div id="eco-lbl" style="font-size:0.75rem; text-transform:uppercase; color:var(--text-dim); font-weight:600">Simulated Carbon Savings</div>
+            <div style="font-size:1.55rem; font-weight:800; color:var(--green); letter-spacing:-0.5px" id="eco-savings-counter">12,408.20 kg CO2</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-agencies">
+        <div class="agency-card">
+          <h3>Nashik Road Logistics</h3>
+          <p>Operated by Nashik Mahanagar Parivahan Mahamandal Ltd (NMPML). Major routes include Satpur MIDC manufacturing corridors and Panchavati Circles.</p>
+        </div>
+        <div class="agency-card">
+          <h3>Indore Metro Link</h3>
+          <p>Operated by Atal Indore City Transport Services Ltd (AiCTSL). Connects historic Rajwada Palace with Vijay Nagar and Airport grids.</p>
+        </div>
+        <div class="agency-card">
+          <h3>Bhopal Urban Route</h3>
+          <p>Operated by Bhopal City Link Ltd (BCLL). Covers busy links connecting Bhopal Junction, Habibganj Station, and DB Mall corridors.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <!-- Toast Container -->
@@ -336,6 +698,58 @@
     <div class="shortcut-row">
       <span class="shortcut-label">Show shortcuts</span>
       <span class="shortcut-key">?</span>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Onboarding Tour Overlay -->
+<div id="tour-overlay" class="tour-overlay" style="display:none">
+  <div class="tour-card">
+    <div class="tour-header">
+      <div class="tour-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="1" y="3" width="22" height="16" rx="3"/><path d="M1 10h22"/><circle cx="7" cy="21" r="2"/><circle cx="17" cy="21" r="2"/>
+        </svg>
+      </div>
+      <span class="tour-title" id="tour-step-title">Welcome to TransitTrack</span>
+      <button class="tour-close-btn" id="tour-close-btn" aria-label="Close Tour">&times;</button>
+    </div>
+    <div class="tour-body" id="tour-body-text">
+      Get a dynamic look at route networks and live vehicles around you.
+    </div>
+    <div class="tour-footer">
+      <span class="tour-progress" id="tour-step-progress">Step 1 of 5</span>
+      <div class="tour-actions">
+        <button id="tour-skip-btn" class="tour-btn-text">Skip</button>
+        <button id="tour-next-btn" class="tour-btn-primary">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mock Payment Modal -->
+<div id="payment-modal" class="payment-modal" style="display:none">
+  <div class="payment-card">
+    <div class="payment-header">
+      <div class="payment-title" id="payment-title-label">Select UPI App</div>
+    </div>
+    <div class="payment-apps">
+      <div class="pay-app" data-pay-app="GPay">
+        <span class="pay-app-dot" style="background:#4285f4"></span>
+        <span>Google Pay</span>
+      </div>
+      <div class="pay-app" data-pay-app="PhonePe">
+        <span class="pay-app-dot" style="background:#5f259f"></span>
+        <span>PhonePe</span>
+      </div>
+      <div class="pay-app" data-pay-app="Paytm">
+        <span class="pay-app-dot" style="background:#00baf2"></span>
+        <span>Paytm UPI</span>
+      </div>
+    </div>
+    <div class="payment-status-message" id="payment-status-message">Waiting for choice...</div>
+    <div class="payment-footer">
+      <button id="payment-cancel-btn" class="payment-btn-cancel">Cancel Payment</button>
     </div>
   </div>
 </div>
