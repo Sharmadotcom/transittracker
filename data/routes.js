@@ -40,6 +40,50 @@ function generateWaypoints(stops, n = 14) {
 }
 
 // ============================================================
+// AMENITY ICONS — SVG icon references (no emoji)
+// ============================================================
+export const AMENITY_ICONS = {
+  parking: `<svg class="amenity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 18V8h4a3 3 0 0 1 0 6H9"/></svg>`,
+  restroom: `<svg class="amenity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
+  food: `<svg class="amenity-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+};
+
+// ============================================================
+// WEATHER SIMULATION DATA — realistic conditions per city
+// ============================================================
+export const WEATHER_DATA = {
+  nashik: [
+    { temp: 32, condition: 'sunny', label: 'Sunny', humidity: 45 },
+    { temp: 28, condition: 'partly-cloudy', label: 'Partly Cloudy', humidity: 58 },
+    { temp: 26, condition: 'cloudy', label: 'Overcast', humidity: 72 },
+    { temp: 24, condition: 'rain', label: 'Light Rain', humidity: 85 },
+    { temp: 30, condition: 'sunny', label: 'Clear', humidity: 40 },
+  ],
+  indore: [
+    { temp: 35, condition: 'sunny', label: 'Hot & Sunny', humidity: 38 },
+    { temp: 33, condition: 'partly-cloudy', label: 'Hazy', humidity: 50 },
+    { temp: 29, condition: 'cloudy', label: 'Overcast', humidity: 65 },
+    { temp: 27, condition: 'rain', label: 'Showers', humidity: 80 },
+    { temp: 34, condition: 'sunny', label: 'Clear Skies', humidity: 42 },
+  ],
+  bhopal: [
+    { temp: 31, condition: 'partly-cloudy', label: 'Warm', humidity: 52 },
+    { temp: 28, condition: 'rain', label: 'Drizzle', humidity: 78 },
+    { temp: 33, condition: 'sunny', label: 'Sunny', humidity: 44 },
+    { temp: 26, condition: 'cloudy', label: 'Cloudy', humidity: 70 },
+    { temp: 30, condition: 'sunny', label: 'Clear', humidity: 48 },
+  ],
+};
+
+// Weather SVG icons
+export const WEATHER_ICONS = {
+  sunny: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  'partly-cloudy': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>`,
+  cloudy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
+  rain: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="8" y1="21" x2="8" y2="23" opacity="0.5"/><line x1="12" y1="21" x2="12" y2="23" opacity="0.5"/><line x1="16" y1="21" x2="16" y2="23" opacity="0.5"/></svg>`,
+};
+
+// ============================================================
 // CITY DATA
 // ============================================================
 
@@ -59,7 +103,7 @@ const CITIES_RAW = {
         id: 'N1',
         number: 'N1',
         name: 'Railway Station — Panchavati',
-        color: '#6C63FF',
+        color: '#6366f1',
         frequency: 12,
         fare: 10,
         speed: 22,
@@ -77,7 +121,7 @@ const CITIES_RAW = {
         id: 'N2',
         number: 'N2',
         name: 'Gangapur Road — CBS Loop',
-        color: '#00D9A3',
+        color: '#2dd4bf',
         frequency: 18,
         fare: 8,
         speed: 20,
@@ -94,7 +138,7 @@ const CITIES_RAW = {
         id: 'N3',
         number: 'N3',
         name: 'Nashik Road — Satpur MIDC',
-        color: '#FFB347',
+        color: '#f59e0b',
         frequency: 20,
         fare: 12,
         speed: 28,
@@ -124,7 +168,7 @@ const CITIES_RAW = {
         id: 'I51',
         number: '51',
         name: 'Rajwada — Vijay Nagar',
-        color: '#FF6B9D',
+        color: '#f472b6',
         frequency: 10,
         fare: 10,
         speed: 20,
@@ -142,7 +186,7 @@ const CITIES_RAW = {
         id: 'I52',
         number: '52',
         name: 'LIG Square — MR-10',
-        color: '#00D9A3',
+        color: '#2dd4bf',
         frequency: 15,
         fare: 8,
         speed: 25,
@@ -159,7 +203,7 @@ const CITIES_RAW = {
         id: 'I53',
         number: '53',
         name: 'Airport — Rajwada',
-        color: '#6C63FF',
+        color: '#6366f1',
         frequency: 25,
         fare: 15,
         speed: 32,
@@ -189,7 +233,7 @@ const CITIES_RAW = {
         id: 'B1',
         number: 'B1',
         name: 'ISBT — New Market — MP Nagar',
-        color: '#FFB347',
+        color: '#f59e0b',
         frequency: 12,
         fare: 10,
         speed: 22,
@@ -207,7 +251,7 @@ const CITIES_RAW = {
         id: 'B2',
         number: 'B2',
         name: 'Habibganj — DB Mall — Arera Colony',
-        color: '#6C63FF',
+        color: '#6366f1',
         frequency: 20,
         fare: 8,
         speed: 20,
@@ -224,7 +268,7 @@ const CITIES_RAW = {
         id: 'B3',
         number: 'B3',
         name: 'Bhopal Junction — TT Nagar',
-        color: '#FF6B9D',
+        color: '#f472b6',
         frequency: 15,
         fare: 8,
         speed: 18,
@@ -251,10 +295,3 @@ Object.values(CITIES_RAW).forEach(city => {
 });
 
 export default CITIES_RAW;
-
-// Amenity icon map
-export const AMENITY_ICONS = {
-  parking: '🅿️',
-  restroom: '🚻',
-  food: '🍽️',
-};

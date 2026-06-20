@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#6C63FF" />
-  <meta name="description" content="Real-time public bus tracking for tier-2 Indian cities. Track buses live, view ETAs, and plan your commute." />
+  <meta name="theme-color" content="#2dd4bf" />
+  <meta name="description" content="Real-time public bus tracking for tier-2 Indian cities. Track buses live, view ETAs, plan trips, and commute smarter." />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>TransitTrack — Real-Time Bus Tracking</title>
@@ -19,12 +19,17 @@
 
 <!-- ── Loading Overlay ──────────────────────────────────────── -->
 <div id="loading-overlay">
-  <div class="loading-logo">🚌</div>
+  <div class="loading-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="1" y="3" width="22" height="16" rx="3"/><path d="M1 10h22"/><circle cx="7" cy="21" r="2"/><circle cx="17" cy="21" r="2"/>
+    </svg>
+  </div>
   <div>
-    <span style="font-weight:700;font-size:1.1rem">TransitTrack</span>
-    <div class="loading-text loading-dots" style="text-align:center;margin-top:4px">
-      Loading city data<span>.</span><span>.</span><span>.</span>
+    <span style="font-weight:600;font-size:1rem;letter-spacing:-0.3px">TransitTrack</span>
+    <div class="loading-text" style="text-align:center;margin-top:4px">
+      Loading city data
     </div>
+    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
   </div>
 </div>
 
@@ -34,19 +39,23 @@
   <!-- Header -->
   <header id="app-header">
     <a href="#" class="logo" id="logo-link">
-      <div class="logo-icon">🚌</div>
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="1" y="3" width="22" height="16" rx="3"/><path d="M1 10h22"/><circle cx="7" cy="21" r="2"/><circle cx="17" cy="21" r="2"/>
+        </svg>
+      </div>
       Transit<span>Track</span>
     </a>
 
     <!-- City Selector -->
     <div id="city-selector-wrap">
       <select id="city-selector" aria-label="Select city">
-        <option value="nashik">📍 Nashik, Maharashtra</option>
-        <option value="indore">📍 Indore, Madhya Pradesh</option>
-        <option value="bhopal">📍 Bhopal, Madhya Pradesh</option>
+        <option value="nashik">Nashik, Maharashtra</option>
+        <option value="indore">Indore, Madhya Pradesh</option>
+        <option value="bhopal">Bhopal, Madhya Pradesh</option>
       </select>
       <span class="selector-arrow">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </span>
@@ -55,7 +64,7 @@
     <!-- Search -->
     <div id="header-search">
       <span class="search-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
       </span>
@@ -67,14 +76,14 @@
     <div class="header-actions">
       <button id="lbm-toggle" title="Toggle low-bandwidth mode" aria-pressed="false">
         <span class="toggle-dot"></span>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M1 6s4-6 11-6 11 6 11 6"/><path d="M1 18s4 6 11 6 11-6 11-6"/>
           <line x1="12" y1="12" x2="12" y2="12"/>
         </svg>
-        <span>Low-BW Mode</span>
+        <span>Low-BW</span>
       </button>
       <button class="icon-btn" id="sidebar-toggle" title="Toggle sidebar" aria-label="Toggle sidebar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/>
         </svg>
       </button>
@@ -92,23 +101,23 @@
         <div class="city-title">
           <span class="city-dot"></span>
           <span id="city-display-name">Nashik</span>
-          <span style="font-size:0.78rem;color:var(--text-muted);font-weight:400" id="city-state">Maharashtra</span>
+          <span style="font-size:0.75rem;color:var(--text-dim);font-weight:400" id="city-state">Maharashtra</span>
         </div>
         <div class="city-stats">
           <div class="stat-item">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="1" y="3" width="22" height="16" rx="2"/><path d="M1 10h22"/>
             </svg>
             <span id="stat-routes" class="stat-value">3</span>&nbsp;<span>routes</span>
           </div>
           <div class="stat-item">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <span id="stat-buses" class="stat-value">10</span>&nbsp;<span>buses</span>
           </div>
           <div class="stat-item">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
             <span id="stat-ontime" class="stat-value">94%</span>&nbsp;<span>on-time</span>
@@ -116,10 +125,19 @@
         </div>
       </div>
 
+      <!-- Favorites -->
+      <div id="favorites-section">
+        <div class="favorites-header">
+          <span class="favorites-title">Saved</span>
+        </div>
+        <div id="favorites-list" class="favorites-list"></div>
+      </div>
+
       <!-- Tabs -->
       <div id="sidebar-tabs" role="tablist">
         <button class="sidebar-tab active" id="tab-routes" role="tab" aria-selected="true" data-tab="routes">Routes</button>
         <button class="sidebar-tab" id="tab-buses" role="tab" aria-selected="false" data-tab="buses">Live Buses</button>
+        <button class="sidebar-tab" id="tab-planner" role="tab" aria-selected="false" data-tab="planner">Trip Planner</button>
         <button class="sidebar-tab" id="tab-alerts" role="tab" aria-selected="false" data-tab="alerts">Alerts</button>
       </div>
 
@@ -138,10 +156,33 @@
           <div id="buses-list"></div>
         </div>
 
+        <!-- Trip Planner Tab -->
+        <div id="panel-planner" class="tab-panel" style="display:none">
+          <div class="section-label">Plan Your Trip</div>
+          <div class="planner-form">
+            <div class="planner-field">
+              <label for="planner-from">From</label>
+              <select id="planner-from"></select>
+            </div>
+            <button class="planner-swap" id="planner-swap-btn" title="Swap origin and destination">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="7 3 7 21"/><polyline points="3 17 7 21 11 17"/>
+                <polyline points="17 21 17 3"/><polyline points="13 7 17 3 21 7"/>
+              </svg>
+            </button>
+            <div class="planner-field">
+              <label for="planner-to">To</label>
+              <select id="planner-to"></select>
+            </div>
+            <button class="planner-go" id="planner-go-btn">Find Routes</button>
+          </div>
+          <div id="trip-results" class="trip-results"></div>
+        </div>
+
         <!-- Alerts Tab -->
         <div id="panel-alerts" class="tab-panel" style="display:none">
           <div class="section-label">Service Alerts</div>
-          <div id="alerts-list" style="padding:0 12px"></div>
+          <div id="alerts-list" style="padding:0 10px"></div>
         </div>
 
       </div><!-- /sidebar-content -->
@@ -149,20 +190,31 @@
 
     <!-- Map -->
     <div id="map-wrap">
+      <canvas id="particle-canvas"></canvas>
       <div id="map" role="application" aria-label="Live bus tracking map"></div>
 
       <!-- Stats overlay -->
       <div id="stats-bar" aria-live="polite">
         <div class="stat-pill">
-          <span class="stat-pill-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span>
-          <strong id="map-stat-buses">10</strong>&nbsp;buses active
+          <span class="stat-pill-dot" style="background:var(--green)"></span>
+          <strong id="map-stat-buses">10</strong>&nbsp;active
         </div>
         <div class="stat-pill">
           <span class="stat-pill-dot" style="background:var(--accent)"></span>
           <strong id="map-stat-ontime">94%</strong>&nbsp;on-time
         </div>
+        <div class="stat-pill" id="weather-pill">
+          <div class="weather-chip">
+            <span id="weather-icon"></span>
+            <span class="weather-temp" id="weather-temp">32°</span>
+            <span class="weather-label" id="weather-label">Sunny</span>
+          </div>
+        </div>
         <div class="stat-pill" id="map-stat-time">
-          🕐 <strong id="map-clock"></strong>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <strong id="map-clock"></strong>
         </div>
       </div>
 
@@ -171,7 +223,11 @@
         <div class="bic-header">
           <div class="bic-badge" id="bic-badge">N1</div>
           <div class="bic-name" id="bic-name">Route name</div>
-          <button class="bic-close" id="bic-close" aria-label="Close">✕</button>
+          <button class="bic-close" id="bic-close" aria-label="Close">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
         <div class="bic-stats">
           <div class="bic-stat">
@@ -191,13 +247,23 @@
             <div class="bic-stat-value" id="bic-fare">₹10</div>
           </div>
         </div>
+        <!-- Route Progress -->
+        <div class="route-progress-wrap" id="route-progress-wrap">
+          <div class="route-progress-label">Route Progress</div>
+          <div class="route-progress-bar" id="route-progress-bar">
+            <div class="route-progress-track"></div>
+            <div class="route-progress-fill" id="route-progress-fill"></div>
+            <div class="route-progress-stops" id="route-progress-stops"></div>
+            <div class="route-progress-bus" id="route-progress-bus"></div>
+          </div>
+        </div>
         <div class="bic-next-stop">
-          <div class="bic-next-label">▶ Next Stop</div>
+          <div class="bic-next-label">Next Stop</div>
           <div class="bic-next-name" id="bic-next-stop">—</div>
           <div class="bic-next-eta" id="bic-next-eta">—</div>
         </div>
         <div class="bic-crowd">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -214,7 +280,7 @@
 
       <!-- Alert Ticker -->
       <div id="alert-ticker">
-        <span class="ticker-label">🔔 ALERTS</span>
+        <span class="ticker-label">ALERTS</span>
         <div class="ticker-scroll" id="ticker-content"></div>
       </div>
 
@@ -224,7 +290,7 @@
     <div id="lbm-view" role="region" aria-label="Low bandwidth bus list">
       <div class="lbm-header">
         <div class="lbm-city-title" id="lbm-city-name">Nashik</div>
-        <div class="lbm-badge">📶 Low-BW Mode</div>
+        <div class="lbm-badge">Low-BW Mode</div>
       </div>
       <div id="lbm-content"></div>
     </div>
@@ -234,6 +300,45 @@
 
 <!-- Toast Container -->
 <div id="toast-container" aria-live="polite"></div>
+
+<!-- Keyboard Shortcuts Overlay -->
+<div id="shortcuts-overlay">
+  <div class="shortcuts-card">
+    <div class="shortcuts-title">Keyboard Shortcuts</div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Routes tab</span>
+      <span class="shortcut-key">1</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Live Buses tab</span>
+      <span class="shortcut-key">2</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Trip Planner tab</span>
+      <span class="shortcut-key">3</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Alerts tab</span>
+      <span class="shortcut-key">4</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Focus search</span>
+      <span class="shortcut-key">/</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Close panel</span>
+      <span class="shortcut-key">Esc</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Toggle favorites</span>
+      <span class="shortcut-key">F</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Show shortcuts</span>
+      <span class="shortcut-key">?</span>
+    </div>
+  </div>
+</div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

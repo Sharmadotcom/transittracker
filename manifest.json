@@ -4,12 +4,12 @@
   "description": "Real-time public bus tracking for tier-2 Indian cities",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0D1117",
-  "theme_color": "#6C63FF",
+  "background_color": "#111215",
+  "theme_color": "#2dd4bf",
   "orientation": "any",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%236C63FF'/><text x='96' y='130' text-anchor='middle' font-size='110' font-family='Arial'>🚌</text></svg>",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%232dd4bf'/%3E%3Csvg x='36' y='36' width='120' height='120' viewBox='0 0 24 24' fill='none' stroke='%23111215' stroke-width='2'%3E%3Crect x='1' y='3' width='22' height='16' rx='3'/%3E%3Cpath d='M1 10h22'/%3E%3Ccircle cx='7' cy='21' r='2'/%3E%3Ccircle cx='17' cy='21' r='2'/%3E%3C/svg%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml"
     }

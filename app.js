@@ -1,22 +1,34 @@
 // ============================================================
-// TransitTrack — Main App Controller
-// Orchestrates: Leaflet map, bus simulation, UI panels, search
+// TransitTrack — Main App Controller v2
+// Orchestrates: Map, simulation, trip planner, favorites,
+// weather, particle canvas, keyboard shortcuts
 // ============================================================
 
-import CITIES, { AMENITY_ICONS } from './data/routes.js';
+import CITIES, { AMENITY_ICONS, WEATHER_DATA, WEATHER_ICONS } from './data/routes.js';
 import { BusTracker } from './simulation/tracker.js';
 
 // ── Constants ────────────────────────────────────────────────
 const CROWD_LABELS = ['Low crowd', 'Moderate crowd', 'High crowd'];
 const STATUS_LABELS = { moving: 'Moving', 'at-stop': 'At stop', delayed: 'Delayed' };
 const ALERTS = [
-  'Route N1 — Minor delays at CBS due to road work • Expected clearance: 6:00 PM',
+  'Route N1 — Minor delays at CBS due to road work. Expected clearance: 6:00 PM',
   'Route I51 — Bus frequency increased to every 8 min during peak hours (5–8 PM)',
   'Route B1 — Temporary detour via Lal Ghati until further notice',
   'All routes — Diwali special service extended till midnight on 1st Nov',
   'Route N3 — Satpur MIDC stop temporarily shifted 200m east',
   'City-wide — 3 new electric buses added to service from Monday',
 ];
+
+// SVG icon helpers (no emoji)
+const ICONS = {
+  bus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="22" height="16" rx="3"/><path d="M1 10h22"/><circle cx="7" cy="21" r="2"/><circle cx="17" cy="21" r="2"/></svg>`,
+  stop: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`,
+  city: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="6" x2="9" y2="6"/><line x1="15" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/><line x1="9" y1="14" x2="9" y2="14"/><line x1="15" y1="14" x2="15" y2="14"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  starFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  arrow: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>`,
+  walking: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M10 22l2-7 3 3v6"/><path d="M14 13l-3-3-3 6"/></svg>`,
+};
 
 // ── TransitApp ───────────────────────────────────────────────
 class TransitApp {
@@ -44,6 +56,17 @@ class TransitApp {
 
     this._rafId = null;
     this._animActive = false;
+
+    // Favorites stored in localStorage
+    this.favorites = this._loadFavorites();
+
+    // Weather state
+    this.weatherIdx = 0;
+    this._weatherInterval = null;
+
+    // Particle canvas
+    this.particles = [];
+    this._particleRafId = null;
   }
 
   // ── Initialization ───────────────────────────────────────
@@ -51,9 +74,12 @@ class TransitApp {
   async init() {
     this.initMap();
     this.initUI();
+    this.initKeyboardShortcuts();
     this.loadCity(this.currentCityId);
     this.startClock();
     this.buildTicker();
+    this.startWeather();
+    this.renderFavorites();
 
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -66,8 +92,8 @@ class TransitApp {
     setTimeout(() => {
       const lo = document.getElementById('loading-overlay');
       lo.classList.add('hidden');
-      setTimeout(() => lo.remove(), 500);
-    }, 900);
+      setTimeout(() => lo.remove(), 400);
+    }, 800);
   }
 
   // ── Map Setup ────────────────────────────────────────────
@@ -82,7 +108,7 @@ class TransitApp {
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       maxZoom: 19,
     }).addTo(this.map);
 
@@ -90,6 +116,100 @@ class TransitApp {
 
     // Close bus card when clicking map
     this.map.on('click', () => this.hideBusCard());
+
+    // Start particle canvas
+    this.initParticleCanvas();
+  }
+
+  // ── Particle Canvas ─────────────────────────────────────
+
+  initParticleCanvas() {
+    const canvas = document.getElementById('particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+      canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    this._particleCtx = ctx;
+    this._particleCanvas = canvas;
+    this._startParticleLoop();
+  }
+
+  _spawnParticles() {
+    const city = CITIES[this.currentCityId];
+    if (!city || !this.map) return;
+
+    // Spawn particles along route waypoints
+    city.routes.forEach(route => {
+      if (Math.random() > 0.15) return; // don't spam
+      const wps = route.waypoints;
+      const startIdx = Math.floor(Math.random() * (wps.length - 1));
+      const start = this.map.latLngToContainerPoint(L.latLng(wps[startIdx]));
+      const end = this.map.latLngToContainerPoint(L.latLng(wps[Math.min(startIdx + 3, wps.length - 1)]));
+
+      this.particles.push({
+        x: start.x,
+        y: start.y,
+        tx: end.x,
+        ty: end.y,
+        progress: 0,
+        speed: 0.005 + Math.random() * 0.01,
+        color: route.color,
+        size: 1.5 + Math.random() * 1.5,
+        opacity: 0.3 + Math.random() * 0.4,
+      });
+    });
+
+    // Cap particles
+    if (this.particles.length > 100) {
+      this.particles = this.particles.slice(-80);
+    }
+  }
+
+  _startParticleLoop() {
+    const ctx = this._particleCtx;
+    const canvas = this._particleCanvas;
+    if (!ctx || !canvas) return;
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      this._spawnParticles();
+
+      this.particles = this.particles.filter(p => {
+        p.progress += p.speed;
+        if (p.progress >= 1) return false;
+
+        const x = p.x + (p.tx - p.x) * p.progress;
+        const y = p.y + (p.ty - p.y) * p.progress;
+
+        // Fade in/out
+        const fade = p.progress < 0.2 ? p.progress / 0.2 :
+                     p.progress > 0.8 ? (1 - p.progress) / 0.2 : 1;
+
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity * fade;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        return true;
+      });
+
+      this._particleRafId = requestAnimationFrame(draw);
+    };
+
+    this._particleRafId = requestAnimationFrame(draw);
   }
 
   // ── Load City ───────────────────────────────────────────
@@ -107,9 +227,10 @@ class TransitApp {
     this.clearMapLayers();
     this.hideBusCard();
     this.activeRouteId = null;
+    this.particles = [];
 
     // Fly map to city
-    this.map.flyTo(city.center, city.zoom, { duration: 1.2 });
+    this.map.flyTo(city.center, city.zoom, { duration: 1 });
 
     // Draw routes and stops
     city.routes.forEach(r => this.drawRoute(r));
@@ -130,6 +251,7 @@ class TransitApp {
       this.updateSidebarBuses(buses);
       this.updateMapStats(buses);
       this.updateLBMView(buses);
+      this.updateFavoriteETAs();
       // If bus card open, refresh it
       if (this.selectedBusId) {
         const b = this.busState.get(this.selectedBusId);
@@ -141,11 +263,15 @@ class TransitApp {
     this.renderSidebar(city);
     this.updateCityHeader(city);
     this.renderAlerts(cityId);
+    this.populateTripPlanner(city);
 
     // LBM
     this.updateLBMCity(city);
 
-    this.showToast(`📍 Loaded ${city.name} — ${city.routes.reduce((s,r)=>s+r.busCount,0)} buses tracking live`);
+    // Weather
+    this.updateWeather();
+
+    this.showToast(`Loaded ${city.name} — ${city.routes.reduce((s,r)=>s+r.busCount,0)} buses tracking`);
   }
 
   // ── Map Layer Drawing ────────────────────────────────────
@@ -166,8 +292,8 @@ class TransitApp {
     // Route polyline
     const line = L.polyline(route.waypoints, {
       color: route.color,
-      weight: 4,
-      opacity: 0.65,
+      weight: 3,
+      opacity: 0.5,
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(this.map);
@@ -177,14 +303,14 @@ class TransitApp {
     route.stops.forEach((stop, si) => {
       const isTerminal = si === 0 || si === route.stops.length - 1;
       const circle = L.circleMarker([stop.lat, stop.lng], {
-        radius: isTerminal ? 8 : 5,
+        radius: isTerminal ? 7 : 4,
         color: route.color,
-        fillColor: '#0D1117',
+        fillColor: '#111215',
         fillOpacity: 1,
-        weight: isTerminal ? 3 : 2,
+        weight: isTerminal ? 2.5 : 2,
         interactive: true,
       }).addTo(this.map)
-        .bindPopup(this.buildStopPopup(stop, route), { maxWidth: 240, className: '' });
+        .bindPopup(this.buildStopPopup(stop, route), { maxWidth: 220, className: '' });
 
       circle.on('click', (e) => {
         L.DomEvent.stopPropagation(e);
@@ -201,7 +327,7 @@ class TransitApp {
     );
     const amenities = stop.amenities.map(a => AMENITY_ICONS[a] || '').join(' ');
     let html = `<div class="popup-stop-name">${stop.name}</div>`;
-    if (amenities) html += `<div style="font-size:0.75rem;margin-bottom:6px;color:var(--text-muted)">${amenities}</div>`;
+    if (amenities) html += `<div style="font-size:0.72rem;margin-bottom:5px;color:var(--text-dim)">${amenities}</div>`;
     if (busesHere.length) {
       busesHere.forEach(b => {
         const eta = b.nextStopEta < 1 ? '<1 min' : `${Math.round(b.nextStopEta)} min`;
@@ -211,7 +337,7 @@ class TransitApp {
         </div>`;
       });
     } else {
-      html += `<div style="font-size:0.75rem;color:var(--text-muted)">No buses heading here shortly</div>`;
+      html += `<div style="font-size:0.72rem;color:var(--text-dim)">No buses heading here shortly</div>`;
     }
     return html;
   }
@@ -251,9 +377,9 @@ class TransitApp {
           ${bus.routeNumber}
         </div>
       </div>`,
-      iconSize: [38, 38],
-      iconAnchor: [19, 19],
-      popupAnchor: [0, -20],
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      popupAnchor: [0, -18],
     });
   }
 
@@ -279,7 +405,7 @@ class TransitApp {
 
   startRenderLoop() {
     this._animActive = true;
-    const ANIM_DURATION = 1800; // slightly less than tick interval
+    const ANIM_DURATION = 1800;
 
     const step = (now) => {
       this.animations.forEach((anim, busId) => {
@@ -314,7 +440,7 @@ class TransitApp {
     document.getElementById('bus-info-card').classList.add('visible');
 
     // Pan map toward bus
-    this.map.panTo([bus.lat, bus.lng], { animate: true, duration: 0.5 });
+    this.map.panTo([bus.lat, bus.lng], { animate: true, duration: 0.4 });
 
     // Highlight route
     this.highlightRoute(bus.routeId);
@@ -325,9 +451,9 @@ class TransitApp {
     if (!card.classList.contains('visible')) return;
 
     document.getElementById('bic-badge').textContent = bus.routeNumber;
-    document.getElementById('bic-badge').style.background = bus.routeColor + '33';
+    document.getElementById('bic-badge').style.background = bus.routeColor + '20';
     document.getElementById('bic-badge').style.color = bus.routeColor;
-    document.getElementById('bic-badge').style.border = `1px solid ${bus.routeColor}55`;
+    document.getElementById('bic-badge').style.border = `1px solid ${bus.routeColor}40`;
 
     document.getElementById('bic-name').textContent = bus.routeName;
     document.getElementById('bic-status').textContent = STATUS_LABELS[bus.status] || bus.status;
@@ -346,6 +472,57 @@ class TransitApp {
     document.getElementById('bic-crowd-label').textContent = crowdLabels[bus.crowdLevel];
     const crowdBar = document.getElementById('bic-crowd-bar');
     crowdBar.className = `crowd-bar crowd-${bus.crowdLevel}`;
+
+    // Route progress bar
+    this.updateRouteProgress(bus, route);
+  }
+
+  // ── Route Progress Visualization ─────────────────────────
+
+  updateRouteProgress(bus, route) {
+    const stopsContainer = document.getElementById('route-progress-stops');
+    const fillEl = document.getElementById('route-progress-fill');
+    const busEl = document.getElementById('route-progress-bus');
+
+    if (!stopsContainer || !route) return;
+
+    const stops = route.stops;
+    const totalStops = stops.length;
+
+    // Build stop dots
+    stopsContainer.innerHTML = '';
+    stops.forEach((stop, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'rp-stop';
+      dot.style.color = route.color;
+
+      // Determine if this stop has been passed
+      const stopWpIdx = route.stopIndices[i];
+      if (bus.direction === 1) {
+        if (stopWpIdx < bus.waypointIdx) {
+          dot.classList.add('passed');
+        } else if (stopWpIdx === bus.waypointIdx || (bus.nextStop === stop.name)) {
+          // current or next
+        }
+      } else {
+        if (stopWpIdx > bus.waypointIdx) {
+          dot.classList.add('passed');
+        }
+      }
+      stopsContainer.appendChild(dot);
+    });
+
+    // Calculate bus position along the route as a percentage
+    const totalWp = route.waypoints.length - 1;
+    const currentProgress = totalWp > 0 ? (bus.waypointIdx + bus.segProgress) / totalWp : 0;
+    const percent = Math.max(0, Math.min(100, currentProgress * 100));
+
+    fillEl.style.width = `${percent}%`;
+    fillEl.style.background = route.color;
+
+    busEl.style.left = `calc(${percent}% - 3px)`;
+    busEl.style.background = route.color;
+    busEl.style.boxShadow = `0 0 6px ${route.color}60`;
   }
 
   hideBusCard() {
@@ -359,15 +536,15 @@ class TransitApp {
   highlightRoute(routeId) {
     this.routeLines.forEach((line, id) => {
       line.setStyle({
-        opacity: id === routeId ? 1 : 0.2,
-        weight: id === routeId ? 6 : 3,
+        opacity: id === routeId ? 0.9 : 0.15,
+        weight: id === routeId ? 5 : 2,
       });
     });
   }
 
   resetRouteHighlight() {
     this.routeLines.forEach(line => {
-      line.setStyle({ opacity: 0.65, weight: 4 });
+      line.setStyle({ opacity: 0.5, weight: 3 });
     });
   }
 
@@ -384,9 +561,9 @@ class TransitApp {
     if (busesEnRoute.length > 0) {
       const first = busesEnRoute[0];
       const eta = first.nextStopEta < 1 ? '<1 min' : `${Math.round(first.nextStopEta)} min`;
-      this.showToast(`🚏 ${stop.name} — Next bus in ${eta}`);
+      this.showToast(`${stop.name} — Next bus in ${eta}`);
     } else {
-      this.showToast(`🚏 ${stop.name} — ${route.name}`);
+      this.showToast(`${stop.name} — ${route.name}`);
     }
   }
 
@@ -406,11 +583,6 @@ class TransitApp {
       card.className = 'route-card';
       card.id = `route-card-${route.id}`;
       card.style.setProperty('--route-color', route.color);
-      card.style.setProperty('color', route.color, '');
-      // Left border via ::before pseudo
-      card.style.cssText += `--route-color:${route.color}`;
-      card.querySelector?.('.route-card::before');
-      // Apply left border color
       card.setAttribute('data-route', route.id);
 
       // Inject style for before element
@@ -428,15 +600,20 @@ class TransitApp {
         .sort((a, b) => a.nextStopEta - b.nextStopEta)[0];
       const nextEta = soonest ? (soonest.nextStopEta < 1 ? '<1 min' : `${Math.round(soonest.nextStopEta)} min`) : '—';
 
+      const isFav = this.favorites.routes.includes(route.id);
+
       card.innerHTML = `
         <div class="route-header">
-          <div class="route-badge" style="background:${route.color}22;color:${route.color};border:1px solid ${route.color}44">
+          <div class="route-badge" style="background:${route.color}18;color:${route.color};border:1px solid ${route.color}30">
             ${route.number}
           </div>
           <div class="route-name">${route.name}</div>
-          <svg class="route-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
+          <div class="route-actions">
+            <button class="route-fav-btn ${isFav ? 'is-fav' : ''}" data-fav-route="${route.id}" title="Save route">
+              ${isFav ? ICONS.starFill : ICONS.star}
+            </button>
+            <span class="route-arrow">${ICONS.arrow}</span>
+          </div>
         </div>
         <div class="route-meta">
           <span class="meta-chip">
@@ -457,7 +634,7 @@ class TransitApp {
             </svg>
             ${route.busCount} buses
           </span>
-          <span class="next-bus-chip" style="background:${route.color}18;color:${route.color}">
+          <span class="next-bus-chip" style="background:${route.color}12;color:${route.color}">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <polyline points="12 6 12 12 16 14"/>
             </svg>
@@ -467,10 +644,11 @@ class TransitApp {
 
         <!-- Expandable stops list -->
         <div class="route-stops">
-          <div class="section-label" style="padding:0 0 8px">Stops</div>
+          <div class="section-label" style="padding:0 0 6px">Stops</div>
           ${route.stops.map((stop, si) => {
             const isLast = si === route.stops.length - 1;
             const amenities = stop.amenities.map(a => AMENITY_ICONS[a] || '').join(' ');
+            const isStopFav = this.favorites.stops.includes(stop.id);
             return `
               <div class="stop-item" data-stop="${stop.id}" data-route="${route.id}">
                 <div class="stop-dot-wrap">
@@ -481,13 +659,39 @@ class TransitApp {
                   <div class="stop-name">${stop.name}</div>
                   ${amenities ? `<div class="stop-amenities">${amenities}</div>` : ''}
                 </div>
+                <button class="stop-fav-btn ${isStopFav ? 'is-fav' : ''}" data-fav-stop="${stop.id}" title="Save stop">
+                  ${isStopFav ? ICONS.starFill : ICONS.star}
+                </button>
                 <span class="stop-eta-badge" data-stop-eta="${stop.id}">—</span>
               </div>`;
           }).join('')}
         </div>
       `;
 
+      // Route fav button
+      card.querySelector('.route-fav-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFavoriteRoute(route.id);
+        // Re-render the button
+        const btn = card.querySelector('.route-fav-btn');
+        const isFavNow = this.favorites.routes.includes(route.id);
+        btn.classList.toggle('is-fav', isFavNow);
+        btn.innerHTML = isFavNow ? ICONS.starFill : ICONS.star;
+      });
+
+      // Stop fav buttons
       card.addEventListener('click', (e) => {
+        const favBtn = e.target.closest('.stop-fav-btn');
+        if (favBtn) {
+          e.stopPropagation();
+          const stopId = favBtn.dataset.favStop;
+          this.toggleFavoriteStop(stopId);
+          const isFavNow = this.favorites.stops.includes(stopId);
+          favBtn.classList.toggle('is-fav', isFavNow);
+          favBtn.innerHTML = isFavNow ? ICONS.starFill : ICONS.star;
+          return;
+        }
+
         const stopItem = e.target.closest('.stop-item');
         if (stopItem) {
           const stopId = stopItem.dataset.stop;
@@ -516,7 +720,7 @@ class TransitApp {
 
       // Pan to route
       const line = this.routeLines.get(routeId);
-      if (line) this.map.flyToBounds(line.getBounds(), { padding: [40, 40], maxZoom: 15, duration: 0.8 });
+      if (line) this.map.flyToBounds(line.getBounds(), { padding: [40, 40], maxZoom: 15, duration: 0.7 });
     } else {
       this.activeRouteId = null;
       this.resetRouteHighlight();
@@ -540,7 +744,7 @@ class TransitApp {
                     nearest.nextStopEta < 1 ? '<1 min' :
                     `${Math.round(nearest.nextStopEta)} min`;
         badge.textContent = eta;
-        badge.style.background = 'rgba(63,185,80,0.15)';
+        badge.style.background = 'var(--green-soft)';
         badge.style.color = 'var(--green)';
       } else {
         badge.textContent = '—';
@@ -569,7 +773,7 @@ class TransitApp {
 
       card.innerHTML = `
         <div class="bus-card-header">
-          <div class="bus-id-badge" style="background:${bus.routeColor}22;color:${bus.routeColor}">
+          <div class="bus-id-badge" style="background:${bus.routeColor}18;color:${bus.routeColor}">
             ${bus.id}
           </div>
           <div class="bus-card-route">${bus.routeName}</div>
@@ -588,7 +792,7 @@ class TransitApp {
           </div>
         </div>
         <div class="crowd-row">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
           </svg>
@@ -652,20 +856,20 @@ class TransitApp {
 
     const all = cityAlerts.length ? cityAlerts : ALERTS.slice(0, 3);
 
-    all.forEach((alert, i) => {
+    all.forEach((alert) => {
       const div = document.createElement('div');
       div.style.cssText = `
-        padding:12px 14px;
-        margin-bottom:8px;
+        padding:10px 12px;
+        margin-bottom:6px;
         border-radius:var(--radius);
         background:var(--surface);
         border:1px solid var(--border);
         border-left:3px solid var(--yellow);
-        font-size:0.82rem;
+        font-size:0.78rem;
         line-height:1.5;
         color:var(--text-muted);
       `;
-      div.innerHTML = `<span style="color:var(--yellow);font-weight:600">⚠ </span>${alert}`;
+      div.innerHTML = `<span style="color:var(--yellow);font-weight:600">Alert </span>${alert}`;
       container.appendChild(div);
     });
   }
@@ -673,10 +877,332 @@ class TransitApp {
   // ── Ticker ───────────────────────────────────────────────
 
   buildTicker() {
-    const content = ALERTS.join(' • ⸻ • ');
+    const content = ALERTS.join('  —  ');
     const ticker = document.getElementById('ticker-content');
     // Duplicate for seamless loop
     ticker.innerHTML = `<span class="ticker-item">${content}</span><span class="ticker-item">${content}</span>`;
+  }
+
+  // ── Weather System ───────────────────────────────────────
+
+  startWeather() {
+    this.updateWeather();
+    // Rotate weather every 30 seconds
+    this._weatherInterval = setInterval(() => {
+      this.weatherIdx++;
+      this.updateWeather();
+    }, 30000);
+  }
+
+  updateWeather() {
+    const data = WEATHER_DATA[this.currentCityId];
+    if (!data) return;
+    const w = data[this.weatherIdx % data.length];
+
+    const iconEl = document.getElementById('weather-icon');
+    const tempEl = document.getElementById('weather-temp');
+    const labelEl = document.getElementById('weather-label');
+
+    if (iconEl) iconEl.innerHTML = WEATHER_ICONS[w.condition] || '';
+    if (tempEl) tempEl.textContent = `${w.temp}°`;
+    if (labelEl) labelEl.textContent = w.label;
+  }
+
+  // ── Trip Planner ─────────────────────────────────────────
+
+  populateTripPlanner(city) {
+    const fromSelect = document.getElementById('planner-from');
+    const toSelect = document.getElementById('planner-to');
+    if (!fromSelect || !toSelect) return;
+
+    // Gather all unique stops
+    const allStops = new Map();
+    city.routes.forEach(route => {
+      route.stops.forEach(stop => {
+        if (!allStops.has(stop.name)) {
+          allStops.set(stop.name, { ...stop, routes: [route] });
+        } else {
+          allStops.get(stop.name).routes.push(route);
+        }
+      });
+    });
+
+    const stopNames = Array.from(allStops.keys()).sort();
+    const optionsHtml = stopNames.map(name => `<option value="${name}">${name}</option>`).join('');
+
+    fromSelect.innerHTML = optionsHtml;
+    toSelect.innerHTML = optionsHtml;
+
+    // Set second stop as default destination
+    if (stopNames.length > 1) {
+      toSelect.selectedIndex = stopNames.length - 1;
+    }
+  }
+
+  findTrips(fromName, toName) {
+    if (fromName === toName) return [];
+    const city = CITIES[this.currentCityId];
+    const results = [];
+
+    // Direct routes: routes that contain both stops
+    city.routes.forEach(route => {
+      const fromIdx = route.stops.findIndex(s => s.name === fromName);
+      const toIdx = route.stops.findIndex(s => s.name === toName);
+
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const stopCount = Math.abs(toIdx - fromIdx);
+        // Estimate time: distance between stops / route speed
+        const totalDist = this._routeDistBetweenStops(route, fromIdx, toIdx);
+        const timeMin = Math.round((totalDist / route.speed) * 60);
+
+        results.push({
+          type: 'Direct',
+          duration: timeMin,
+          fare: route.fare,
+          steps: [{ route, from: fromName, to: toName, stops: stopCount }],
+        });
+      }
+    });
+
+    // Transfer routes: find routes with common stops
+    city.routes.forEach(route1 => {
+      city.routes.forEach(route2 => {
+        if (route1.id === route2.id) return;
+        const from1 = route1.stops.findIndex(s => s.name === fromName);
+        if (from1 === -1) return;
+        const to2 = route2.stops.findIndex(s => s.name === toName);
+        if (to2 === -1) return;
+
+        // Find common transfer stop
+        route1.stops.forEach(s1 => {
+          const transferIdx2 = route2.stops.findIndex(s2 => s2.name === s1.name);
+          if (transferIdx2 === -1) return;
+
+          const stops1 = Math.abs(route1.stops.indexOf(s1) - from1);
+          const stops2 = Math.abs(to2 - transferIdx2);
+
+          const dist1 = this._routeDistBetweenStops(route1, from1, route1.stops.indexOf(s1));
+          const dist2 = this._routeDistBetweenStops(route2, transferIdx2, to2);
+          const time1 = (dist1 / route1.speed) * 60;
+          const time2 = (dist2 / route2.speed) * 60;
+          const totalTime = Math.round(time1 + time2 + 3); // +3 min transfer wait
+
+          // Avoid duplicate trips with same transfer
+          const key = `${route1.id}-${s1.name}-${route2.id}`;
+          if (results.find(r => r._key === key)) return;
+
+          results.push({
+            type: 'Transfer',
+            _key: key,
+            duration: totalTime,
+            fare: route1.fare + route2.fare,
+            steps: [
+              { route: route1, from: fromName, to: s1.name, stops: stops1 },
+              { route: route2, from: s1.name, to: toName, stops: stops2 },
+            ],
+            transferStop: s1.name,
+          });
+        });
+      });
+    });
+
+    // Sort by duration
+    results.sort((a, b) => a.duration - b.duration);
+    return results.slice(0, 5);
+  }
+
+  _routeDistBetweenStops(route, idx1, idx2) {
+    const wp = route.waypoints;
+    const si = route.stopIndices;
+    const start = si[Math.min(idx1, idx2)];
+    const end = si[Math.max(idx1, idx2)];
+    let dist = 0;
+    for (let i = start; i < end && i < wp.length - 1; i++) {
+      const R = 6371;
+      const dLat = (wp[i+1][0] - wp[i][0]) * Math.PI / 180;
+      const dLng = (wp[i+1][1] - wp[i][1]) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(wp[i][0]*Math.PI/180) * Math.cos(wp[i+1][0]*Math.PI/180) * Math.sin(dLng/2)**2;
+      dist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    return dist;
+  }
+
+  renderTripResults(results) {
+    const container = document.getElementById('trip-results');
+    if (!container) return;
+
+    if (!results.length) {
+      container.innerHTML = `<div class="trip-empty">No routes found between these stops. Try different locations.</div>`;
+      return;
+    }
+
+    container.innerHTML = results.map(trip => `
+      <div class="trip-card">
+        <div class="trip-card-header">
+          <div class="trip-duration">${trip.duration} min</div>
+          <div class="trip-type">${trip.type}</div>
+        </div>
+        <div class="trip-steps">
+          ${trip.steps.map((step, i) => `
+            ${i > 0 ? `<span class="trip-walk">${ICONS.walking} Transfer at ${trip.transferStop}</span><span class="trip-step-arrow">${ICONS.arrow}</span>` : ''}
+            <span class="trip-step">
+              <span class="trip-step-badge" style="background:${step.route.color}18;color:${step.route.color}">${step.route.number}</span>
+              ${step.from} → ${step.to}
+              <span style="color:var(--text-dim)">(${step.stops} stops)</span>
+            </span>
+          `).join('')}
+        </div>
+        <div style="margin-top:6px;font-size:0.72rem;color:var(--text-dim)">Fare: ₹${trip.fare}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Favorites System ─────────────────────────────────────
+
+  _loadFavorites() {
+    try {
+      const saved = localStorage.getItem('transittrack-favorites');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return { routes: [], stops: [] };
+  }
+
+  _saveFavorites() {
+    try {
+      localStorage.setItem('transittrack-favorites', JSON.stringify(this.favorites));
+    } catch (_) {}
+  }
+
+  toggleFavoriteRoute(routeId) {
+    const idx = this.favorites.routes.indexOf(routeId);
+    if (idx === -1) {
+      this.favorites.routes.push(routeId);
+      this.showToast(`Route saved`);
+    } else {
+      this.favorites.routes.splice(idx, 1);
+      this.showToast(`Route removed from saved`);
+    }
+    this._saveFavorites();
+    this.renderFavorites();
+  }
+
+  toggleFavoriteStop(stopId) {
+    const idx = this.favorites.stops.indexOf(stopId);
+    if (idx === -1) {
+      this.favorites.stops.push(stopId);
+      this.showToast(`Stop saved`);
+    } else {
+      this.favorites.stops.splice(idx, 1);
+      this.showToast(`Stop removed from saved`);
+    }
+    this._saveFavorites();
+    this.renderFavorites();
+  }
+
+  renderFavorites() {
+    const section = document.getElementById('favorites-section');
+    const list = document.getElementById('favorites-list');
+    if (!section || !list) return;
+
+    const hasItems = this.favorites.routes.length > 0 || this.favorites.stops.length > 0;
+    section.classList.toggle('has-items', hasItems);
+    if (!hasItems) { list.innerHTML = ''; return; }
+
+    let html = '';
+
+    // Favorite routes
+    this.favorites.routes.forEach(routeId => {
+      const city = CITIES[this.currentCityId];
+      const route = city?.routes.find(r => r.id === routeId);
+      if (!route) return;
+
+      html += `<div class="fav-chip" data-fav-type="route" data-fav-id="${routeId}">
+        <span style="color:${route.color};font-weight:700">${route.number}</span>
+        <span>${route.name.split('—')[0].trim()}</span>
+        <span class="fav-remove" data-remove-route="${routeId}" title="Remove">&times;</span>
+      </div>`;
+    });
+
+    // Favorite stops
+    this.favorites.stops.forEach(stopId => {
+      const city = CITIES[this.currentCityId];
+      let stop = null, route = null;
+      city?.routes.forEach(r => {
+        const s = r.stops.find(s => s.id === stopId);
+        if (s) { stop = s; route = r; }
+      });
+      if (!stop) return;
+
+      // Get ETA
+      const nearest = Array.from(this.busState.values())
+        .filter(b => b.nextStop === stop.name && b.nextStopEta != null)
+        .sort((a, b) => a.nextStopEta - b.nextStopEta)[0];
+      const etaText = nearest ? (nearest.nextStopEta < 1 ? '<1m' : `${Math.round(nearest.nextStopEta)}m`) : '';
+
+      html += `<div class="fav-chip" data-fav-type="stop" data-fav-id="${stopId}">
+        <span style="width:6px;height:6px;border-radius:50%;background:${route.color};flex-shrink:0"></span>
+        <span>${stop.name}</span>
+        ${etaText ? `<span class="fav-eta">${etaText}</span>` : ''}
+        <span class="fav-remove" data-remove-stop="${stopId}" title="Remove">&times;</span>
+      </div>`;
+    });
+
+    list.innerHTML = html;
+
+    // Event listeners for remove buttons
+    list.querySelectorAll('[data-remove-route]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFavoriteRoute(btn.dataset.removeRoute);
+        // Re-render route card fav button if visible
+        const cardBtn = document.querySelector(`[data-fav-route="${btn.dataset.removeRoute}"]`);
+        if (cardBtn) {
+          cardBtn.classList.remove('is-fav');
+          cardBtn.innerHTML = ICONS.star;
+        }
+      });
+    });
+
+    list.querySelectorAll('[data-remove-stop]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFavoriteStop(btn.dataset.removeStop);
+        const cardBtn = document.querySelector(`[data-fav-stop="${btn.dataset.removeStop}"]`);
+        if (cardBtn) {
+          cardBtn.classList.remove('is-fav');
+          cardBtn.innerHTML = ICONS.star;
+        }
+      });
+    });
+
+    // Click on fav chip to pan
+    list.querySelectorAll('.fav-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if (e.target.classList.contains('fav-remove')) return;
+        const type = chip.dataset.favType;
+        const id = chip.dataset.favId;
+        if (type === 'route') {
+          const card = document.getElementById(`route-card-${id}`);
+          if (card) {
+            document.getElementById('tab-routes')?.click();
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            this.toggleRouteCard(id, card);
+          }
+        } else if (type === 'stop') {
+          const marker = this.stopCircles.get(id);
+          if (marker) {
+            this.map.panTo(marker.getLatLng());
+            marker.openPopup();
+          }
+        }
+      });
+    });
+  }
+
+  updateFavoriteETAs() {
+    if (this.favorites.stops.length === 0) return;
+    // Debounce: only re-render if we have fav stops
+    this.renderFavorites();
   }
 
   // ── Low-Bandwidth Mode ───────────────────────────────────
@@ -696,23 +1222,24 @@ class TransitApp {
       section.className = 'lbm-route-section';
 
       const routeBuses = buses.filter(b => b.routeId === route.id);
+      const crowdDots = ['var(--green)', 'var(--yellow)', 'var(--red)'];
+
       section.innerHTML = `
         <div class="lbm-route-title">
           <div class="lbm-route-dot" style="background:${route.color}"></div>
           Route ${route.number} — ${route.name}
-          <span style="margin-left:auto;font-size:0.75rem;font-weight:400;color:var(--text-muted)">₹${route.fare} • Every ${route.frequency}min</span>
+          <span style="margin-left:auto;font-size:0.72rem;font-weight:400;color:var(--text-dim)">₹${route.fare} / Every ${route.frequency}min</span>
         </div>
         ${routeBuses.map(b => {
           const eta = b.nextStopEta == null ? '—' :
             b.nextStopEta < 0.5 ? 'Arriving' :
             b.nextStopEta < 1 ? '<1 min' :
             `${Math.round(b.nextStopEta)} min`;
-          const crowdEmoji = ['🟢', '🟡', '🔴'][b.crowdLevel];
           return `<div class="lbm-bus-row">
             <span class="lbm-bus-id" style="color:${b.routeColor}">${b.id}</span>
-            <span class="lbm-status">→ <strong>${b.nextStop || 'End of line'}</strong></span>
+            <span class="lbm-status">Next: <strong>${b.nextStop || 'End of line'}</strong></span>
             <span class="lbm-eta">${eta}</span>
-            <span class="lbm-crowd-text">${crowdEmoji}</span>
+            <span class="lbm-crowd-text"><span class="lbm-crowd-dot" style="background:${crowdDots[b.crowdLevel]}"></span></span>
           </div>`;
         }).join('')}
       `;
@@ -771,9 +1298,9 @@ class TransitApp {
       if (this.lowBandwidth) {
         const buses = this.tracker.getSnapshot();
         this.updateLBMView(buses);
-        this.showToast('📶 Low-bandwidth mode: map hidden, text-only view active');
+        this.showToast('Low-bandwidth mode: text-only view active');
       } else {
-        this.showToast('🗺️ Map view restored');
+        this.showToast('Map view restored');
       }
     });
 
@@ -791,6 +1318,24 @@ class TransitApp {
       setTimeout(() => searchResults.classList.remove('visible'), 200);
     });
 
+    // Trip planner
+    document.getElementById('planner-swap-btn')?.addEventListener('click', () => {
+      const from = document.getElementById('planner-from');
+      const to = document.getElementById('planner-to');
+      const temp = from.value;
+      from.value = to.value;
+      to.value = temp;
+    });
+
+    document.getElementById('planner-go-btn')?.addEventListener('click', () => {
+      const from = document.getElementById('planner-from')?.value;
+      const to = document.getElementById('planner-to')?.value;
+      if (from && to) {
+        const results = this.findTrips(from, to);
+        this.renderTripResults(results);
+      }
+    });
+
     // Mobile sidebar drag handle
     const sidebar = document.getElementById('sidebar');
     let touchStartY = 0;
@@ -804,6 +1349,63 @@ class TransitApp {
       if (delta < -30) sidebar.classList.add('expanded');
       else if (delta > 30) sidebar.classList.remove('expanded');
     }, { passive: true });
+  }
+
+  // ── Keyboard Shortcuts ───────────────────────────────────
+
+  initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Don't trigger if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+        if (e.key === 'Escape') {
+          e.target.blur();
+        }
+        return;
+      }
+
+      const shortcutsOverlay = document.getElementById('shortcuts-overlay');
+
+      switch(e.key) {
+        case '1':
+          document.getElementById('tab-routes')?.click();
+          break;
+        case '2':
+          document.getElementById('tab-buses')?.click();
+          break;
+        case '3':
+          document.getElementById('tab-planner')?.click();
+          break;
+        case '4':
+          document.getElementById('tab-alerts')?.click();
+          break;
+        case '/':
+          e.preventDefault();
+          document.getElementById('search-input')?.focus();
+          break;
+        case 'Escape':
+          this.hideBusCard();
+          shortcutsOverlay?.classList.remove('visible');
+          break;
+        case 'f':
+        case 'F':
+          // Toggle favorites visibility
+          const section = document.getElementById('favorites-section');
+          if (section?.classList.contains('has-items')) {
+            section.style.display = section.style.display === 'none' ? 'block' : '';
+          }
+          break;
+        case '?':
+          shortcutsOverlay?.classList.toggle('visible');
+          break;
+      }
+    });
+
+    // Close shortcuts overlay on click outside
+    document.getElementById('shortcuts-overlay')?.addEventListener('click', (e) => {
+      if (e.target.id === 'shortcuts-overlay') {
+        e.target.classList.remove('visible');
+      }
+    });
   }
 
   // ── Search ───────────────────────────────────────────────
@@ -832,20 +1434,20 @@ class TransitApp {
     // Search other cities
     Object.values(CITIES).forEach(c => {
       if (c.id !== this.currentCityId && c.name.toLowerCase().includes(query)) {
-        results.push({ type: 'city', label: c.name, sub: c.state, color: '#6C63FF', city: c });
+        results.push({ type: 'city', label: c.name, sub: c.state, color: '#2dd4bf', city: c });
       }
     });
 
     if (!results.length) {
-      container.innerHTML = `<div style="padding:12px 16px;color:var(--text-muted);font-size:0.83rem">No results for "${query}"</div>`;
+      container.innerHTML = `<div style="padding:10px 14px;color:var(--text-dim);font-size:0.8rem">No results for "${query}"</div>`;
       container.classList.add('visible');
       return;
     }
 
     container.innerHTML = results.slice(0, 8).map(r => `
       <div class="search-result-item" data-type="${r.type}" data-id="${r.route?.id || r.city?.id || ''}">
-        <div class="search-icon-sm" style="background:${r.color}33;color:${r.color}">
-          ${r.type === 'route' ? '🚌' : r.type === 'stop' ? '🚏' : '🏙️'}
+        <div class="search-icon-sm" style="background:${r.color}20;color:${r.color}">
+          ${r.type === 'route' ? ICONS.bus : r.type === 'stop' ? ICONS.stop : ICONS.city}
         </div>
         <div>
           <div class="search-result-name">${r.label}</div>
@@ -908,8 +1510,8 @@ class TransitApp {
     container.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('out');
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+      setTimeout(() => toast.remove(), 250);
+    }, 3000);
   }
 }
 
