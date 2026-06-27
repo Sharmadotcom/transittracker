@@ -89,7 +89,10 @@
     <!-- Top Navigation Bar -->
     <nav id="app-nav">
       <button class="nav-item active" data-page="map" id="nav-map">Live Map</button>
+      <button class="nav-item" data-page="planner" id="nav-planner">Trip Planner</button>
+      <button class="nav-item" data-page="tickets" id="nav-tickets">Tickets</button>
       <button class="nav-item" data-page="analytics" id="nav-analytics">Analytics</button>
+      <button class="nav-item" data-page="eco" id="nav-eco">Eco Hub</button>
       <button class="nav-item" data-page="support" id="nav-support">Support</button>
       <button class="nav-item" data-page="about" id="nav-about">About</button>
     </nav>
@@ -164,8 +167,6 @@
       <div id="sidebar-tabs" role="tablist">
         <button class="sidebar-tab active" id="tab-routes" role="tab" aria-selected="true" data-tab="routes">Routes</button>
         <button class="sidebar-tab" id="tab-buses" role="tab" aria-selected="false" data-tab="buses">Live Buses</button>
-        <button class="sidebar-tab" id="tab-planner" role="tab" aria-selected="false" data-tab="planner">Trip Planner</button>
-        <button class="sidebar-tab" id="tab-tickets" role="tab" aria-selected="false" data-tab="tickets">Tickets</button>
         <button class="sidebar-tab" id="tab-alerts" role="tab" aria-selected="false" data-tab="alerts">Alerts</button>
       </div>
 
@@ -182,103 +183,6 @@
         <div id="panel-buses" class="tab-panel" style="display:none">
           <div class="section-label">Active Buses</div>
           <div id="buses-list"></div>
-        </div>
-
-        <!-- Trip Planner Tab -->
-        <div id="panel-planner" class="tab-panel" style="display:none">
-          <div class="section-label">Plan Your Trip</div>
-          <div class="planner-form">
-            <div class="planner-field">
-              <label for="planner-from">From</label>
-              <select id="planner-from"></select>
-            </div>
-            <button class="planner-swap" id="planner-swap-btn" title="Swap origin and destination">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="7 3 7 21"/><polyline points="3 17 7 21 11 17"/>
-                <polyline points="17 21 17 3"/><polyline points="13 7 17 3 21 7"/>
-              </svg>
-            </button>
-            <div class="planner-field">
-              <label for="planner-to">To</label>
-              <select id="planner-to"></select>
-            </div>
-            <button class="planner-go" id="planner-go-btn">Find Routes</button>
-          </div>
-          <div id="trip-results" class="trip-results"></div>
-        </div>
-
-        <!-- Tickets Tab -->
-        <div id="panel-tickets" class="tab-panel" style="display:none">
-          <div class="section-label">Book Transit Pass</div>
-          <div class="tickets-booking-view" id="tickets-booking-view">
-            <div class="planner-form">
-              <div class="planner-field">
-                <label for="ticket-route">Select Route</label>
-                <select id="ticket-route"></select>
-              </div>
-              <div class="planner-field">
-                <label for="ticket-from">From Stop</label>
-                <select id="ticket-from"></select>
-              </div>
-              <div class="planner-field">
-                <label for="ticket-to">To Stop</label>
-                <select id="ticket-to"></select>
-              </div>
-              <div class="ticket-fare-estimate">
-                <span>Estimated Fare:</span>
-                <strong id="ticket-fare-amount">₹0</strong>
-              </div>
-              <button class="planner-go" id="ticket-book-btn">Book Digital Pass</button>
-            </div>
-          </div>
-          
-          <div class="tickets-pass-view" id="tickets-pass-view" style="display:none">
-            <div class="digital-ticket">
-              <div class="ticket-header">
-                <div class="ticket-brand">TransitTrack Pass</div>
-                <div class="ticket-valid-tag">ACTIVE</div>
-              </div>
-              <div class="ticket-main">
-                <div class="ticket-row">
-                  <div class="ticket-col">
-                    <span class="t-lbl">Passenger</span>
-                    <strong class="t-val">COMMUTER</strong>
-                  </div>
-                  <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">Route</span>
-                    <strong class="t-val" id="pass-route-badge">N1</strong>
-                  </div>
-                </div>
-                <div class="ticket-row">
-                  <div class="ticket-col">
-                    <span class="t-lbl">From</span>
-                    <strong class="t-val" id="pass-from-stop">Station</strong>
-                  </div>
-                  <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">To</span>
-                    <strong class="t-val" id="pass-to-stop">Panchavati</strong>
-                  </div>
-                </div>
-                <div class="ticket-row">
-                  <div class="ticket-col">
-                    <span class="t-lbl">Date</span>
-                    <strong class="t-val" id="pass-date">20-06-2026</strong>
-                  </div>
-                  <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">Fare Paid</span>
-                    <strong class="t-val" id="pass-fare">₹10</strong>
-                  </div>
-                </div>
-                <div class="ticket-qr-wrap">
-                  <canvas id="ticket-qr" width="120" height="120"></canvas>
-                  <div class="qr-overlay-text">SCAN FOR ENTRY</div>
-                </div>
-              </div>
-              <div class="ticket-footer-strip">
-                <button class="ticket-cancel-btn" id="ticket-cancel-btn">Cancel Pass</button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Alerts Tab -->
@@ -368,6 +272,22 @@
             <div class="bic-stat-value" id="bic-fare">₹10</div>
           </div>
         </div>
+
+        <!-- Speedometer Telemetry -->
+        <div class="speedometer-wrap">
+          <svg class="speedometer-svg" viewBox="0 0 100 60">
+            <path class="speedometer-bg" d="M 15 50 A 40 40 0 0 1 85 50" fill="none" stroke="var(--surface-3)" stroke-width="6" stroke-linecap="round"/>
+            <path class="speedometer-fill" id="speedometer-gauge" d="M 15 50 A 40 40 0 0 1 85 50" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="110"/>
+            <g id="speedometer-needle-group" transform="translate(50, 50) rotate(-90)">
+              <line class="speedometer-needle" x1="0" y1="0" x2="0" y2="-38" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="0" cy="0" r="3.5" fill="var(--red)"/>
+            </g>
+          </svg>
+          <div class="speedometer-text">
+            <span id="speedometer-value">0</span> <span class="speedometer-unit">km/h</span>
+          </div>
+        </div>
+
         <!-- Route Progress -->
         <div class="route-progress-wrap" id="route-progress-wrap">
           <div class="route-progress-label">Route Progress</div>
@@ -417,7 +337,7 @@
                 <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0-5.5 1.5M12 22a10 10 0 0 1-5.5-1.5"/>
               </svg>
             </div>
-            <div id="seat-grid" class="seat-grid"></div>
+            <div id="bic-seat-grid" class="seat-grid"></div>
           </div>
         </div>
       </div><!-- /bus-info-card -->
@@ -658,6 +578,293 @@
     </div>
   </div>
 
+  <!-- Trip Planner Page -->
+  <div id="page-planner" class="app-page" style="display:none">
+    <div class="page-container">
+      <div class="page-header-block">
+        <div>
+          <h1 id="planner-title" class="page-title">Interactive Journey Planner</h1>
+          <p id="planner-subtitle" class="page-subtitle">Find optimal route connections between cities and stops.</p>
+        </div>
+      </div>
+      
+      <div class="planner-layout">
+        <!-- Search Form Card -->
+        <div class="planner-card-form">
+          <h3 class="planner-card-title">Where are you heading?</h3>
+          <div class="planner-form-body">
+            <div class="planner-field">
+              <label for="planner-from">Departure Station</label>
+              <select id="planner-from"></select>
+            </div>
+            
+            <button class="planner-swap-btn" id="planner-swap-btn" title="Swap origin and destination">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="7 3 7 21"/><polyline points="3 17 7 21 11 17"/>
+                <polyline points="17 21 17 3"/><polyline points="13 7 17 3 21 7"/>
+              </svg>
+            </button>
+            
+            <div class="planner-field">
+              <label for="planner-to">Destination Station</label>
+              <select id="planner-to"></select>
+            </div>
+            
+            <button class="planner-go-btn" id="planner-go-btn">Search Routes</button>
+          </div>
+        </div>
+
+        <!-- Trip Results list -->
+        <div class="planner-results-wrap">
+          <h3 class="planner-card-title">Available Routes</h3>
+          <div id="trip-results" class="trip-results">
+            <div class="trip-empty">Select departure and destination stations to plan your journey.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets / Pass Booking Page -->
+  <div id="page-tickets" class="app-page" style="display:none">
+    <div class="page-container">
+      <div class="page-header-block">
+        <div>
+          <h1 id="tickets-title" class="page-title">Ticketing & Passes Hub</h1>
+          <p id="tickets-subtitle" class="page-subtitle">Book digital RFID commuter passes and manage your wallet.</p>
+        </div>
+      </div>
+
+      <div class="tickets-layout">
+        <!-- Booking Panel -->
+        <div class="tickets-booking-panel">
+          <div class="tickets-booking-view" id="tickets-booking-view">
+            <h3 class="planner-card-title">Book New Pass</h3>
+            <div class="planner-form">
+              <div class="planner-field">
+                <label for="ticket-route">Select Transit Route</label>
+                <select id="ticket-route"></select>
+              </div>
+              <div class="planner-field-row">
+                <div class="planner-field">
+                  <label for="ticket-from">From Stop</label>
+                  <select id="ticket-from"></select>
+                </div>
+                <div class="planner-field">
+                  <label for="ticket-to">To Stop</label>
+                  <select id="ticket-to"></select>
+                </div>
+              </div>
+              
+              <!-- Seat Layout Selection Widget -->
+              <div class="seat-selection-widget">
+                <label class="widget-label">Select Your Seat (Optional)</label>
+                <div class="seat-map-legend">
+                  <span class="legend-item"><span class="legend-dot seat-available"></span>Empty</span>
+                  <span class="legend-item"><span class="legend-dot seat-occupied"></span>Full</span>
+                  <span class="legend-item"><span class="legend-dot seat-accessible"></span>Priority</span>
+                </div>
+                <div class="bus-interior">
+                  <div class="bus-driver">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0-5.5 1.5M12 22a10 10 0 0 1-5.5-1.5"/>
+                    </svg>
+                  </div>
+                  <div id="seat-grid" class="seat-grid"></div>
+                </div>
+                <div class="selected-seat-indicator" id="selected-seat-indicator">
+                  No seat selected (Priority seating is reserved for special needs)
+                </div>
+              </div>
+
+              <div class="ticket-fare-estimate">
+                <span>Total Fare Amount:</span>
+                <strong id="ticket-fare-amount">₹0</strong>
+              </div>
+              <button class="planner-go-btn" id="ticket-book-btn">Proceed to Payment</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passes Wallet Panel -->
+        <div class="tickets-wallet-panel">
+          <h3 class="planner-card-title">Digital Wallet</h3>
+          
+          <div class="tickets-pass-view" id="tickets-pass-view" style="display:none">
+            <div class="digital-ticket">
+              <div class="ticket-header">
+                <div class="ticket-brand">TransitTrack PWA Pass</div>
+                <div class="ticket-valid-tag">ACTIVE PASS</div>
+              </div>
+              <div class="ticket-main">
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">Passenger ID</span>
+                    <strong class="t-val">COMMUTER_IND</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">Route Badge</span>
+                    <strong class="t-val" id="pass-route-badge">N1</strong>
+                  </div>
+                </div>
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">Origin Terminal</span>
+                    <strong class="t-val" id="pass-from-stop">Station</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">Destination Terminal</span>
+                    <strong class="t-val" id="pass-to-stop">Panchavati</strong>
+                  </div>
+                </div>
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="t-lbl">Date of Issue</span>
+                    <strong class="t-val" id="pass-date">20-06-2026</strong>
+                  </div>
+                  <div class="ticket-col" style="text-align:right">
+                    <span class="t-lbl">Fare Deducted</span>
+                    <strong class="t-val" id="pass-fare">₹10</strong>
+                  </div>
+                </div>
+                <div class="ticket-qr-section">
+                  <div class="ticket-qr-wrap">
+                    <canvas id="ticket-qr" width="130" height="130"></canvas>
+                    <div class="qr-laser-line"></div>
+                  </div>
+                  <div class="qr-overlay-text">SCAN RFID AT READER BOARD</div>
+                </div>
+              </div>
+              <div class="ticket-footer-strip">
+                <button class="ticket-cancel-btn" id="ticket-cancel-btn">Cancel Current Pass</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tickets-wallet-empty" class="wallet-empty-state">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="1.5" style="margin-bottom:8px">
+              <rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <div>No active digital passes in your wallet. Select stops on the left to book one.</div>
+          </div>
+
+          <!-- Ticket Booking History (Expired passes) -->
+          <div class="wallet-history-wrap">
+            <h4 class="wallet-history-title">Recent Booking History</h4>
+            <div id="tickets-history-list" class="tickets-history-list">
+              <!-- Dynamically populated expired tickets -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Eco / Sustainability Hub Page -->
+  <div id="page-eco" class="app-page" style="display:none">
+    <div class="page-container">
+      <div class="page-header-block">
+        <div>
+          <h1 id="eco-title" class="page-title">Sustainability & Eco Hub</h1>
+          <p id="eco-subtitle" class="page-subtitle">Track your carbon savings and earn eco-achievements by choosing public transit.</p>
+        </div>
+      </div>
+
+      <!-- Eco Dashboard Content -->
+      <div class="eco-layout">
+        <!-- Savings Counter Card -->
+        <div class="eco-hero-card">
+          <div class="eco-hero-info">
+            <div class="eco-icon-pulse">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div>
+              <span id="eco-lbl" class="eco-lbl-heading">Total Simulated Carbon Savings</span>
+              <div class="eco-counter-wrap">
+                <strong class="eco-savings-val" id="eco-savings-counter">12,408.20 kg CO2</strong>
+              </div>
+            </div>
+          </div>
+          <div class="eco-milestones">
+            <div class="eco-milestone-info">
+              <span>Progress to next Rank: **Eco Guardian**</span>
+              <span id="eco-progress-percent">62%</span>
+            </div>
+            <div class="eco-progress-bar-wrap">
+              <div class="eco-progress-bar-fill" style="width: 62%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Badges / Gamified achievements -->
+        <div class="eco-card">
+          <h3 class="chart-title">Commuter Achievements</h3>
+          <div class="eco-badges-grid">
+            <div class="eco-badge-card unlocked" id="badge-rookie">
+              <div class="eco-badge-icon">🌱</div>
+              <div class="eco-badge-meta">
+                <h4 class="badge-name">Transit Rookie</h4>
+                <p class="badge-desc">Book your first digital ticket pass.</p>
+              </div>
+            </div>
+            <div class="eco-badge-card unlocked" id="badge-fighter">
+              <div class="eco-badge-icon">🛡️</div>
+              <div class="eco-badge-meta">
+                <h4 class="badge-name">Carbon Fighter</h4>
+                <p class="badge-desc">Save over 10kg of CO2 emissions.</p>
+              </div>
+            </div>
+            <div class="eco-badge-card locked" id="badge-warrior">
+              <div class="eco-badge-icon">⚔️</div>
+              <div class="eco-badge-meta">
+                <h4 class="badge-name">Eco Warrior</h4>
+                <p class="badge-desc">Complete 10 trips using the planner.</p>
+              </div>
+            </div>
+            <div class="eco-badge-card locked" id="badge-hero">
+              <div class="eco-badge-icon">👑</div>
+              <div class="eco-badge-meta">
+                <h4 class="badge-name">Carbon Zero Hero</h4>
+                <p class="badge-desc">Achieve 100kg total carbon offsets.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparison SVG Charts -->
+        <div class="eco-card">
+          <h3 class="chart-title">Carbon Footprint Comparison</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:14px">Emissions in grams of CO2 per passenger kilometer travel</p>
+          <div class="eco-chart-wrap">
+            <div class="eco-chart-row">
+              <span class="eco-chart-label">Standard SUV</span>
+              <div class="eco-chart-track">
+                <div class="eco-chart-bar suv" style="width: 85%"></div>
+              </div>
+              <span class="eco-chart-val">192g</span>
+            </div>
+            <div class="eco-chart-row">
+              <span class="eco-chart-label">Petrol Rickshaw</span>
+              <div class="eco-chart-track">
+                <div class="eco-chart-bar rickshaw" style="width: 40%"></div>
+              </div>
+              <span class="eco-chart-val">84g</span>
+            </div>
+            <div class="eco-chart-row">
+              <span class="eco-chart-label">Electric Bus</span>
+              <div class="eco-chart-track">
+                <div class="eco-chart-bar bus" style="width: 8%"></div>
+              </div>
+              <span class="eco-chart-val">12g</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <!-- Toast Container -->
@@ -668,20 +875,24 @@
   <div class="shortcuts-card">
     <div class="shortcuts-title">Keyboard Shortcuts</div>
     <div class="shortcut-row">
-      <span class="shortcut-label">Routes tab</span>
+      <span class="shortcut-label">Live Map Page</span>
       <span class="shortcut-key">1</span>
     </div>
     <div class="shortcut-row">
-      <span class="shortcut-label">Live Buses tab</span>
+      <span class="shortcut-label">Trip Planner Page</span>
       <span class="shortcut-key">2</span>
     </div>
     <div class="shortcut-row">
-      <span class="shortcut-label">Trip Planner tab</span>
+      <span class="shortcut-label">Tickets Hub Page</span>
       <span class="shortcut-key">3</span>
     </div>
     <div class="shortcut-row">
-      <span class="shortcut-label">Alerts tab</span>
+      <span class="shortcut-label">Analytics Dashboard</span>
       <span class="shortcut-key">4</span>
+    </div>
+    <div class="shortcut-row">
+      <span class="shortcut-label">Sustainability Eco Hub</span>
+      <span class="shortcut-key">5</span>
     </div>
     <div class="shortcut-row">
       <span class="shortcut-label">Focus search</span>
@@ -746,6 +957,11 @@
         <span class="pay-app-dot" style="background:#00baf2"></span>
         <span>Paytm UPI</span>
       </div>
+    </div>
+    <div class="payment-loading-wrap" id="payment-loading-wrap" style="display:none">
+      <svg class="payment-spinner" viewBox="0 0 50 50">
+        <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="4"></circle>
+      </svg>
     </div>
     <div class="payment-status-message" id="payment-status-message">Waiting for choice...</div>
     <div class="payment-footer">

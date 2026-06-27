@@ -347,6 +347,7 @@ class TransitApp {
     this.startWeather();
     this.renderFavorites();
     this.startEcoSavingsCounter();
+    this.switchPage('map');
 
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -546,6 +547,8 @@ class TransitApp {
     this.renderAlerts(cityId);
     this.populateTripPlanner(city);
     this.populateTicketSelectors(city);
+    this.renderWallet();
+    this.renderBookingSeatMap();
 
     // LBM
     this.updateLBMCity(city);
@@ -765,6 +768,23 @@ class TransitApp {
     document.getElementById('bic-crowd-label').textContent = crowdLabels[bus.crowdLevel];
     const crowdBar = document.getElementById('bic-crowd-bar');
     crowdBar.className = `crowd-bar crowd-${bus.crowdLevel}`;
+
+    // Speedometer Telemetry updates
+    const speedValEl = document.getElementById('speedometer-value');
+    const gaugeEl = document.getElementById('speedometer-gauge');
+    const needleGroup = document.getElementById('speedometer-needle-group');
+    if (speedValEl && gaugeEl && needleGroup) {
+      speedValEl.textContent = bus.speed;
+      const maxSpeed = 60;
+      const speedPct = Math.min(1, bus.speed / maxSpeed);
+      // Update SVG path stroke-dashoffset (total length is 110)
+      const offset = this.lowBandwidth ? 110 : (110 - (speedPct * 110));
+      gaugeEl.style.strokeDashoffset = offset;
+      
+      // Update needle rotation (angle from -90 to 90 degrees)
+      const angle = -90 + (speedPct * 180);
+      needleGroup.setAttribute('transform', `translate(50, 50) rotate(${angle})`);
+    }
 
     // Route progress bar
     this.updateRouteProgress(bus, route);
@@ -1761,16 +1781,19 @@ class TransitApp {
 
       switch(e.key) {
         case '1':
-          document.getElementById('tab-routes')?.click();
+          this.switchPage('map');
           break;
         case '2':
-          document.getElementById('tab-buses')?.click();
+          this.switchPage('planner');
           break;
         case '3':
-          document.getElementById('tab-planner')?.click();
+          this.switchPage('tickets');
           break;
         case '4':
-          document.getElementById('tab-alerts')?.click();
+          this.switchPage('analytics');
+          break;
+        case '5':
+          this.switchPage('eco');
           break;
         case '/':
           e.preventDefault();
@@ -1894,33 +1917,52 @@ class TransitApp {
     setInterval(update, 30000);
   }
 
-  // ── Page Switcher & Routing ──────────────────────────────
   switchPage(pageId) {
     document.querySelectorAll('#app-nav .nav-item').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.page === pageId);
     });
 
     const mainView = document.getElementById('main');
-    const pages = document.querySelectorAll('.app-page');
-    
-    pages.forEach(p => p.style.display = 'none');
+    const pages = Array.from(document.querySelectorAll('.app-page'));
+    const allViews = [mainView, ...pages];
 
-    if (pageId === 'map') {
-      mainView.style.display = 'flex';
-      if (this.map) {
-        setTimeout(() => {
-          this.map.invalidateSize();
-        }, 100);
-      }
-    } else {
-      mainView.style.display = 'none';
-      const activePage = document.getElementById(`page-${pageId}`);
-      if (activePage) {
-        activePage.style.display = 'block';
-        if (pageId === 'analytics') {
-          this.updateAnalytics();
+    const currentActiveView = allViews.find(v => v.classList.contains('page-active'));
+
+    const showTarget = () => {
+      allViews.forEach(v => {
+        v.style.display = 'none';
+        v.classList.remove('page-active');
+      });
+
+      if (pageId === 'map') {
+        mainView.style.display = 'flex';
+        mainView.offsetHeight; // Force reflow
+        mainView.classList.add('page-active');
+        if (this.map) {
+          setTimeout(() => {
+            this.map.invalidateSize();
+          }, 50);
+        }
+      } else {
+        const activePage = document.getElementById(`page-${pageId}`);
+        if (activePage) {
+          activePage.style.display = 'block';
+          activePage.offsetHeight; // Force reflow
+          activePage.classList.add('page-active');
+          if (pageId === 'analytics') {
+            this.updateAnalytics();
+          } else if (pageId === 'eco') {
+            this.startEcoHubAnimations();
+          }
         }
       }
+    };
+
+    if (currentActiveView) {
+      currentActiveView.classList.remove('page-active');
+      setTimeout(showTarget, 200);
+    } else {
+      showTarget();
     }
     
     // Auto-expand/collapse mobile view styling
@@ -2055,15 +2097,11 @@ class TransitApp {
     // Sidebar tab buttons
     document.getElementById('tab-routes').textContent = dict.allRoutes;
     document.getElementById('tab-buses').textContent = dict.activeBuses;
-    document.getElementById('tab-planner').textContent = dict.planYourTrip;
-    document.getElementById('tab-tickets').textContent = dict.tickets;
     document.getElementById('tab-alerts').textContent = dict.alerts;
 
     // Sidebar panels labels
     document.querySelector('#panel-routes .section-label').textContent = dict.allRoutesLabel;
     document.querySelector('#panel-buses .section-label').textContent = dict.activeBusesLabel;
-    document.querySelector('#panel-planner .section-label').textContent = dict.planYourTripLabel;
-    document.querySelector('#panel-tickets .section-label').textContent = dict.bookTransitPassLabel;
     document.querySelector('#panel-alerts .section-label').textContent = dict.serviceAlertsLabel;
 
     // Planner labels
@@ -2095,8 +2133,14 @@ class TransitApp {
     // Translate top navigation link text
     const navMap = document.getElementById('nav-map');
     if (navMap) navMap.textContent = dict.navMap;
+    const navPlanner = document.getElementById('nav-planner');
+    if (navPlanner) navPlanner.textContent = dict.planYourTrip;
+    const navTickets = document.getElementById('nav-tickets');
+    if (navTickets) navTickets.textContent = dict.tickets;
     const navAnaly = document.getElementById('nav-analytics');
     if (navAnaly) navAnaly.textContent = dict.navAnalytics;
+    const navEco = document.getElementById('nav-eco');
+    if (navEco) navEco.textContent = lang === 'hi' ? 'इको हब' : lang === 'mr' ? 'इको हब' : 'Eco Hub';
     const navSupp = document.getElementById('nav-support');
     if (navSupp) navSupp.textContent = dict.navSupport;
     const navAb = document.getElementById('nav-about');
@@ -2181,11 +2225,18 @@ class TransitApp {
         toSelect.selectedIndex = route.stops.length - 1;
       }
       this.updateTicketFare(route);
+      this.renderBookingSeatMap();
     };
 
     routeSelect.addEventListener('change', updateStops);
-    fromSelect.addEventListener('change', () => this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value)));
-    toSelect.addEventListener('change', () => this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value)));
+    fromSelect.addEventListener('change', () => {
+      this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value));
+      this.renderBookingSeatMap();
+    });
+    toSelect.addEventListener('change', () => {
+      this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value));
+      this.renderBookingSeatMap();
+    });
     
     updateStops();
   }
@@ -2223,12 +2274,14 @@ class TransitApp {
     }
 
     const fareText = document.getElementById('ticket-fare-amount').textContent;
+    const seatVal = this._selectedBookingSeat || null;
     this._pendingBooking = {
       routeNumber: route.number,
       routeColor: route.color,
       fromName: fromStop.name,
       toName: toStop.name,
       fare: fareText,
+      seat: seatVal,
       date: new Date().toLocaleDateString(this.currentLanguage === 'hi' ? 'hi-IN' : this.currentLanguage === 'mr' ? 'mr-IN' : 'en-US')
     };
 
@@ -2244,8 +2297,10 @@ class TransitApp {
 
   processUPIPayment(appName) {
     const statusMsg = document.getElementById('payment-status-message');
+    const spinner = document.getElementById('payment-loading-wrap');
     const dict = TRANSLATIONS[this.currentLanguage];
     statusMsg.innerHTML = `<span style="color:var(--accent)">Contacting ${appName}... Authorization pending...</span>`;
+    if (spinner) spinner.style.display = 'flex';
     
     // Disable clicks during mock payment
     document.querySelectorAll('.pay-app').forEach(el => el.style.pointerEvents = 'none');
@@ -2253,6 +2308,7 @@ class TransitApp {
     setTimeout(() => {
       if (!this._pendingBooking) return; // cancelled
       statusMsg.innerHTML = `<span style="color:var(--green)">Payment Successful! Generating pass...</span>`;
+      if (spinner) spinner.style.display = 'none';
       
       setTimeout(() => {
         this.generateDigitalPass();
@@ -2265,36 +2321,47 @@ class TransitApp {
   cancelPayment() {
     this._pendingBooking = null;
     document.getElementById('payment-modal').style.display = 'none';
+    const spinner = document.getElementById('payment-loading-wrap');
+    if (spinner) spinner.style.display = 'none';
     document.querySelectorAll('.pay-app').forEach(el => el.style.pointerEvents = '');
     this.showToast("Payment cancelled");
   }
 
   generateDigitalPass() {
     if (!this._pendingBooking) return;
-    this.activePass = this._pendingBooking;
+    
+    const passes = this._loadPasses();
+    passes.forEach(p => {
+      if (p.status === 'active') p.status = 'expired';
+    });
+
+    const newPass = {
+      ...this._pendingBooking,
+      status: 'active'
+    };
+    passes.push(newPass);
+    this._savePasses(passes);
     this._pendingBooking = null;
 
-    // Save active pass to state
-    document.getElementById('pass-route-badge').textContent = this.activePass.routeNumber;
-    document.getElementById('pass-route-badge').style.background = this.activePass.routeColor + '20';
-    document.getElementById('pass-route-badge').style.color = this.activePass.routeColor;
-    document.getElementById('pass-from-stop').textContent = this.activePass.fromName;
-    document.getElementById('pass-to-stop').textContent = this.activePass.toName;
-    document.getElementById('pass-date').textContent = this.activePass.date;
-    document.getElementById('pass-fare').textContent = this.activePass.fare;
+    this.renderWallet();
+    this.renderBookingSeatMap(); // reset seat map
 
-    // Render Canvas QR
-    this.drawMockQR('ticket-qr', `TransitPass|${this.activePass.routeNumber}|${this.activePass.fromName}|${this.activePass.toName}|${this.activePass.fare}`);
-
-    document.getElementById('tickets-booking-view').style.display = 'none';
-    document.getElementById('tickets-pass-view').style.display = 'block';
     this.showToast("Pass generated successfully");
+
+    // Unlock Rookie badge
+    const rookieBadge = document.getElementById('badge-rookie');
+    if (rookieBadge) rookieBadge.className = 'eco-badge-card unlocked';
   }
 
   cancelPass() {
-    this.activePass = null;
-    document.getElementById('tickets-pass-view').style.display = 'none';
-    document.getElementById('tickets-booking-view').style.display = 'block';
+    const passes = this._loadPasses();
+    const active = passes.find(p => p.status === 'active');
+    if (active) {
+      active.status = 'expired';
+      this._savePasses(passes);
+    }
+    this.renderWallet();
+    this.renderBookingSeatMap();
     this.showToast("Pass cancelled");
   }
 
@@ -2438,7 +2505,7 @@ class TransitApp {
   }
 
   renderSeatMap(bus) {
-    const grid = document.getElementById('seat-grid');
+    const grid = document.getElementById('bic-seat-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
@@ -2538,7 +2605,7 @@ class TransitApp {
       {
         title: dict.tourPassTitle,
         body: dict.tourPassBody,
-        highlightId: 'tab-tickets'
+        highlightId: 'nav-tickets'
       }
     ];
 
@@ -2550,7 +2617,7 @@ class TransitApp {
     const highlightTarget = document.getElementById(step.highlightId);
     if (highlightTarget) {
       highlightTarget.classList.add('tour-highlight');
-      if (step.highlightId === 'tab-tickets') {
+      if (step.highlightId === 'nav-tickets') {
         highlightTarget.click();
       }
     }
@@ -2612,6 +2679,223 @@ class TransitApp {
     btn.classList.toggle('active', this.trafficOverlayActive);
     this.refreshRouteLines();
     this.showToast(this.trafficOverlayActive ? "Traffic overlay active" : "Traffic overlay hidden");
+  }
+
+  // ── Eco Sustainability Page Logic ────────────────────────
+  startEcoHubAnimations() {
+    // Rolling counter animation
+    const el = document.getElementById('eco-savings-counter');
+    if (!el) return;
+
+    let targetVal = 12408.20;
+    
+    // Set badge states based on digital passes
+    const passes = this._loadPasses();
+    const rookieBadge = document.getElementById('badge-rookie');
+    const fighterBadge = document.getElementById('badge-fighter');
+    const warriorBadge = document.getElementById('badge-warrior');
+    const heroBadge = document.getElementById('badge-hero');
+
+    if (rookieBadge) {
+      if (passes.length > 0) {
+        rookieBadge.className = 'eco-badge-card unlocked';
+      } else {
+        rookieBadge.className = 'eco-badge-card locked';
+      }
+    }
+
+    const co2Saved = passes.length * 4.2; // approx 4.2kg saved per pass
+    if (fighterBadge) {
+      if (co2Saved >= 10 || passes.length >= 3) {
+        fighterBadge.className = 'eco-badge-card unlocked';
+      } else {
+        fighterBadge.className = 'eco-badge-card locked';
+      }
+    }
+
+    if (warriorBadge) {
+      if (passes.length >= 8) {
+        warriorBadge.className = 'eco-badge-card unlocked';
+      } else {
+        warriorBadge.className = 'eco-badge-card locked';
+      }
+    }
+
+    if (heroBadge) {
+      if (co2Saved >= 100) {
+        heroBadge.className = 'eco-badge-card unlocked';
+      } else {
+        heroBadge.className = 'eco-badge-card locked';
+      }
+    }
+
+    // Progress bar value
+    const progressFill = document.querySelector('.eco-progress-bar-fill');
+    const progressText = document.getElementById('eco-progress-percent');
+    if (progressFill && progressText) {
+      const nextRankPct = Math.min(100, Math.round((passes.length / 10) * 100));
+      progressFill.style.width = `${nextRankPct}%`;
+      progressText.textContent = `${nextRankPct}%`;
+    }
+
+    if (this.lowBandwidth) {
+      el.textContent = `${targetVal.toFixed(2)} kg CO2`;
+      return;
+    }
+
+    // Roll up animation from 0 to target
+    let current = 0;
+    const duration = 1000; // ms
+    const stepTime = 20; // ms
+    const steps = duration / stepTime;
+    const increment = targetVal / steps;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= targetVal) {
+        current = targetVal;
+        clearInterval(timer);
+      }
+      el.textContent = `${current.toLocaleString(this.currentLanguage === 'hi' ? 'hi-IN' : this.currentLanguage === 'mr' ? 'mr-IN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg CO2`;
+    }, stepTime);
+  }
+
+  // ── Seat Selection Map for Booking ──────────────────────
+  renderBookingSeatMap() {
+    const grid = document.getElementById('seat-grid');
+    const indicator = document.getElementById('selected-seat-indicator');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    this._selectedBookingSeat = null;
+    if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seat selected";
+
+    const rows = 6;
+    let seatCounter = 1;
+    
+    const routeId = document.getElementById('ticket-route')?.value || 'N1';
+    let seed = 0;
+    for (let i = 0; i < routeId.length; i++) seed += routeId.charCodeAt(i);
+
+    const getSeatState = (seatNum) => {
+      if (seatNum === 1 || seatNum === 2) {
+        return 'accessible';
+      }
+      const val = Math.abs(Math.sin(seatNum * 31.7 + seed * 12.3));
+      return val < 0.55 ? 'occupied' : 'available';
+    };
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 1; c <= 5; c++) {
+        if (c === 3) {
+          const aisle = document.createElement('div');
+          aisle.className = 'seat-aisle';
+          grid.appendChild(aisle);
+        } else {
+          const seat = document.createElement('div');
+          const seatNum = seatCounter++;
+          const state = getSeatState(seatNum);
+          
+          seat.className = `seat ${state}`;
+          seat.dataset.seatNum = seatNum;
+          seat.title = `Seat ${seatNum}: ${state === 'accessible' ? 'Priority' : state === 'occupied' ? 'Occupied' : 'Vacant'}`;
+
+          seat.addEventListener('click', () => {
+            if (state === 'occupied') {
+              this.showToast(this.currentLanguage === 'hi' ? `सीट ${seatNum} पहले से ही भरी हुई है` : this.currentLanguage === 'mr' ? `जागा ${seatNum} आधीच भरलेली आहे` : `Seat ${seatNum} is occupied`);
+              return;
+            }
+            
+            if (state === 'accessible' && this._selectedBookingSeat !== seatNum) {
+              const confirmOk = confirm(this.currentLanguage === 'hi' ? "यह सीट विशेष जरूरतों वाले यात्रियों के लिए आरक्षित है। क्या आप इसे बुक करना चाहते हैं?" : this.currentLanguage === 'mr' ? "ही जागा विशेष गरजा असलेल्या प्रवाशांसाठी राखीव आहे. आपण बुक करू इच्छिता?" : "This seat is prioritized for passengers with accessibility needs or seniors. Do you wish to book it?");
+              if (!confirmOk) return;
+            }
+
+            const activeSeat = grid.querySelector('.seat.selected');
+            if (activeSeat) {
+              activeSeat.classList.remove('selected');
+              if (activeSeat.dataset.seatNum === String(seatNum)) {
+                this._selectedBookingSeat = null;
+                if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seat selected";
+                return;
+              }
+            }
+
+            seat.classList.add('selected');
+            this._selectedBookingSeat = seatNum;
+            if (indicator) {
+              indicator.textContent = this.currentLanguage === 'hi' ? `चुनी गई सीट: ${seatNum} (${state === 'accessible' ? 'प्राथमिकता' : 'सामान्य'})` : this.currentLanguage === 'mr' ? `निवडलेली जागा: ${seatNum} (${state === 'accessible' ? 'प्राधान्य' : 'सामान्य'})` : `Selected seat: ${seatNum} (${state === 'accessible' ? 'Priority' : 'Standard'})`;
+            }
+            this.showToast(this.currentLanguage === 'hi' ? `सीट ${seatNum} चुनी गई` : this.currentLanguage === 'mr' ? `जागा ${seatNum} निवडली` : `Selected seat ${seatNum}`);
+          });
+
+          grid.appendChild(seat);
+        }
+      }
+    }
+  }
+
+  // ── Passes Storage & Wallet Rendering ──────────────────────
+  _loadPasses() {
+    try {
+      const saved = localStorage.getItem('transittrack-passes');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return [];
+  }
+
+  _savePasses(passes) {
+    try {
+      localStorage.setItem('transittrack-passes', JSON.stringify(passes));
+    } catch (_) {}
+  }
+
+  renderWallet() {
+    const passes = this._loadPasses();
+    const activePass = passes.find(p => p.status === 'active');
+    const expiredPasses = passes.filter(p => p.status === 'expired');
+
+    const walletEmpty = document.getElementById('tickets-wallet-empty');
+    const passView = document.getElementById('tickets-pass-view');
+    const historyList = document.getElementById('tickets-history-list');
+
+    if (activePass) {
+      if (walletEmpty) walletEmpty.style.display = 'none';
+      if (passView) passView.style.display = 'block';
+
+      document.getElementById('pass-route-badge').textContent = activePass.routeNumber;
+      document.getElementById('pass-route-badge').style.background = activePass.routeColor + '20';
+      document.getElementById('pass-route-badge').style.color = activePass.routeColor;
+      document.getElementById('pass-from-stop').textContent = activePass.fromName;
+      document.getElementById('pass-to-stop').textContent = activePass.toName;
+      document.getElementById('pass-date').textContent = activePass.date;
+      document.getElementById('pass-fare').textContent = activePass.fare;
+
+      // Render Canvas QR
+      this.drawMockQR('ticket-qr', `TransitPass|${activePass.routeNumber}|${activePass.fromName}|${activePass.toName}|${activePass.fare}|Seat:${activePass.seat || 'None'}`);
+    } else {
+      if (walletEmpty) walletEmpty.style.display = 'flex';
+      if (passView) passView.style.display = 'none';
+    }
+
+    if (historyList) {
+      if (expiredPasses.length === 0) {
+        historyList.innerHTML = `<div style="font-size:0.76rem; color:var(--text-dim); text-align:center; padding:10px 0;">No previous passes</div>`;
+      } else {
+        historyList.innerHTML = expiredPasses.slice(-5).reverse().map(p => `
+          <div class="history-card">
+            <div class="history-info">
+              <div class="history-route" style="color:${p.routeColor}">${p.routeNumber} — ${p.fromName.split(' ')[0]} to ${p.toName.split(' ')[0]}</div>
+              <div class="history-stops">Seat ${p.seat || 'None'}</div>
+            </div>
+            <div class="history-meta">
+              <div class="history-fare">${p.fare}</div>
+              <div class="history-date">${p.date}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
   }
 }
 

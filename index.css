@@ -2116,6 +2116,7 @@ select { font-family: var(--font); }
   height: 28px;
 }
 .nav-item {
+  position: relative;
   background: none;
   border: none;
   padding: 6px 12px;
@@ -2128,12 +2129,26 @@ select { font-family: var(--font); }
 }
 .nav-item:hover {
   color: var(--text);
-  background: var(--surface);
 }
 .nav-item.active {
   color: var(--accent);
-  background: var(--accent-soft);
   font-weight: 600;
+  background: var(--accent-soft);
+}
+.nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px var(--accent);
+}
+.nav-item.active::after {
+  width: 60%;
 }
 
 /* ── Fullscreen Page Containers ───────────────────────────── */
@@ -2144,6 +2159,27 @@ select { font-family: var(--font); }
   background: var(--bg);
   z-index: 90;
   overflow-y: auto;
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.app-page.page-active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+#main {
+  opacity: 0;
+  transform: translateY(15px);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+#main.page-active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 .page-container {
   max-width: 1000px;
@@ -2437,6 +2473,519 @@ select { font-family: var(--font); }
   }
   .about-agencies {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   TransitTrack — UI Redesign Additions
+   ============================================================ */
+
+/* Speedometer Telemetry Widget */
+.speedometer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 12px 0 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  position: relative;
+}
+.speedometer-svg {
+  width: 100px;
+  height: 60px;
+}
+.speedometer-bg {
+  stroke: var(--surface-3);
+}
+.speedometer-fill {
+  stroke-dasharray: 110;
+  stroke-dashoffset: 110;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.speedometer-needle {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.speedometer-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: -6px;
+}
+.speedometer-unit {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+/* Trip Planner Layout */
+.planner-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.planner-card-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.planner-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+.planner-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.planner-swap-btn {
+  align-self: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: -4px 0;
+}
+.planner-swap-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: rotate(180deg);
+}
+.planner-go-btn {
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #111215;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+.planner-go-btn:hover {
+  opacity: 0.9;
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.4);
+}
+.planner-results-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  min-height: 250px;
+}
+
+/* Tickets Layout */
+.tickets-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.tickets-booking-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.tickets-wallet-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 400px;
+}
+.planner-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.widget-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin: 14px 0 6px;
+}
+.selected-seat-indicator {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  text-align: center;
+  background: var(--surface-2);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+}
+
+/* Active Digital Pass */
+.digital-ticket {
+  background: linear-gradient(135deg, #1e1b4b 0%, #111827 100%);
+  border: 1.5px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.digital-ticket::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: var(--accent);
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+.ticket-qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.ticket-qr-wrap {
+  position: relative;
+  background: #ffffff;
+  padding: 10px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+.ticket-qr-wrap canvas {
+  display: block;
+}
+.qr-laser-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #2dd4bf;
+  box-shadow: 0 0 12px #2dd4bf, 0 0 4px #2dd4bf;
+  animation: qr-scan 2.4s ease-in-out infinite;
+}
+@keyframes qr-scan {
+  0%, 100% { top: 0; }
+  50% { top: calc(100% - 3px); }
+}
+.qr-overlay-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  margin-top: 10px;
+}
+.wallet-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  flex: 1;
+}
+.wallet-history-wrap {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.wallet-history-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+}
+.tickets-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.7;
+}
+.history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.history-route {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.history-stops {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.history-meta {
+  text-align: right;
+}
+.history-fare {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.history-date {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+/* Eco Page Layout */
+.eco-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.eco-hero-card {
+  background: linear-gradient(135deg, var(--green-soft) 0%, rgba(9, 10, 12, 0.4) 100%);
+  border: 1.5px solid rgba(52, 211, 153, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.eco-hero-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.eco-icon-pulse {
+  width: 52px; height: 52px;
+  background: rgba(52, 211, 153, 0.15);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.2);
+  animation: eco-pulse 2s infinite;
+}
+@keyframes eco-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+.eco-lbl-heading {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.eco-savings-val {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+.eco-milestones {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 14px;
+}
+.eco-milestone-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.eco-progress-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.eco-progress-bar-fill {
+  height: 100%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  border-radius: 3px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.eco-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.eco-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.eco-badge-card {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+.eco-badge-card.unlocked {
+  border-color: rgba(45, 212, 191, 0.2);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.03);
+}
+.eco-badge-card.unlocked:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.25);
+  transform: translateY(-3px);
+}
+.eco-badge-card.locked {
+  opacity: 0.45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+.eco-badge-icon {
+  font-size: 1.8rem;
+}
+.eco-badge-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.badge-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.badge-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* Eco charts */
+.eco-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0;
+}
+.eco-chart-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+}
+.eco-chart-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.eco-chart-track {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.eco-chart-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.eco-chart-bar.suv {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+}
+.eco-chart-bar.rickshaw {
+  background: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+}
+.eco-chart-bar.bus {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.eco-chart-val {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Payment loader animation */
+.payment-loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0 10px;
+}
+.payment-spinner {
+  animation: rotate 2s linear infinite;
+  width: 44px;
+  height: 44px;
+}
+.payment-spinner .path {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+}
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+@keyframes dash {
+  0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+  100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+}
+
+/* Leaflet pulsing route dash animation */
+.leaflet-interactive {
+  stroke-dasharray: 8, 12;
+  animation: route-dash 30s linear infinite;
+}
+@keyframes route-dash {
+  to { stroke-dashoffset: -1000; }
+}
+
+/* Mobile responsive for new multi-page layouts */
+@media (max-width: 768px) {
+  .planner-layout, .tickets-layout {
+    grid-template-columns: 1fr;
+  }
+  .eco-badges-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .eco-chart-row {
+    grid-template-columns: 100px 1fr 40px;
   }
 }
 
