@@ -641,9 +641,15 @@
           <div class="tickets-booking-view" id="tickets-booking-view">
             <h3 class="planner-card-title">Book New Pass</h3>
             <div class="planner-form">
-              <div class="planner-field">
-                <label for="ticket-route">Select Transit Route</label>
-                <select id="ticket-route"></select>
+              <div class="planner-field-row">
+                <div class="planner-field">
+                  <label for="ticket-city" id="lbl-ticket-city">Select City</label>
+                  <select id="ticket-city"></select>
+                </div>
+                <div class="planner-field">
+                  <label for="ticket-route">Select Transit Route</label>
+                  <select id="ticket-route"></select>
+                </div>
               </div>
               <div class="planner-field-row">
                 <div class="planner-field">
@@ -699,31 +705,35 @@
               <div class="ticket-main">
                 <div class="ticket-row">
                   <div class="ticket-col">
-                    <span class="t-lbl">Passenger ID</span>
+                    <span class="t-lbl" id="lbl-pass-passenger">Passenger ID</span>
                     <strong class="t-val">COMMUTER_IND</strong>
                   </div>
                   <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">Route Badge</span>
+                    <span class="t-lbl" id="lbl-pass-route">Route Badge</span>
                     <strong class="t-val" id="pass-route-badge">N1</strong>
                   </div>
                 </div>
                 <div class="ticket-row">
                   <div class="ticket-col">
-                    <span class="t-lbl">Origin Terminal</span>
+                    <span class="t-lbl" id="lbl-pass-from">Origin Terminal</span>
                     <strong class="t-val" id="pass-from-stop">Station</strong>
                   </div>
                   <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">Destination Terminal</span>
+                    <span class="t-lbl" id="lbl-pass-to">Destination Terminal</span>
                     <strong class="t-val" id="pass-to-stop">Panchavati</strong>
                   </div>
                 </div>
                 <div class="ticket-row">
                   <div class="ticket-col">
-                    <span class="t-lbl">Date of Issue</span>
+                    <span class="t-lbl" id="lbl-pass-date">Date of Issue</span>
                     <strong class="t-val" id="pass-date">20-06-2026</strong>
                   </div>
+                  <div class="ticket-col" style="text-align:center">
+                    <span class="t-lbl" id="lbl-pass-seat">Seat</span>
+                    <strong class="t-val" id="pass-seat">None</strong>
+                  </div>
                   <div class="ticket-col" style="text-align:right">
-                    <span class="t-lbl">Fare Deducted</span>
+                    <span class="t-lbl" id="lbl-pass-fare">Fare Deducted</span>
                     <strong class="t-val" id="pass-fare">₹10</strong>
                   </div>
                 </div>

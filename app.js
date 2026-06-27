@@ -25,11 +25,13 @@ const TRANSLATIONS = {
     toLabel: "To",
     findRoutesBtn: "Find Routes",
     selectRouteLabel: "Select Route",
+    selectCityLabel: "Select City",
     fromStopLabel: "From Stop",
     toStopLabel: "To Stop",
     estFareLabel: "Estimated Fare:",
     bookPassBtnLabel: "Book Digital Pass",
     passengerLabel: "Passenger",
+    seatLabel: "Seat",
     routeLabel: "Route",
     fromStopPass: "From",
     toStopPass: "To",
@@ -110,11 +112,13 @@ const TRANSLATIONS = {
     toLabel: "कहाँ तक",
     findRoutesBtn: "मार्ग खोजें",
     selectRouteLabel: "मार्ग चुनें",
+    selectCityLabel: "शहर चुनें",
     fromStopLabel: "शुरुआती स्टॉप",
     toStopLabel: "गंतव्य स्टॉप",
     estFareLabel: "अनुमानित किराया:",
     bookPassBtnLabel: "डिजिटल पास बुक करें",
     passengerLabel: "यात्री",
+    seatLabel: "सीट",
     routeLabel: "मार्ग",
     fromStopPass: "प्रस्थान",
     toStopPass: "गंतव्य",
@@ -195,11 +199,13 @@ const TRANSLATIONS = {
     toLabel: "कुठे",
     findRoutesBtn: "मार्ग शोधा",
     selectRouteLabel: "मार्ग निवडा",
+    selectCityLabel: "शहर निवडा",
     fromStopLabel: "सुरूवातीचे थांबा",
     toStopLabel: "शेवटचा थांबा",
     estFareLabel: "अंदाजे भाडे:",
     bookPassBtnLabel: "डिजिटल पास बुक करा",
     passengerLabel: "प्रवासी",
+    seatLabel: "जागा",
     routeLabel: "मार्ग",
     fromStopPass: "प्रस्थान",
     toStopPass: "गंतव्य",
@@ -1565,8 +1571,19 @@ class TransitApp {
 
     // City selector
     document.getElementById('city-selector').addEventListener('change', e => {
+      const ticketCity = document.getElementById('ticket-city');
+      if (ticketCity) ticketCity.value = e.target.value;
       this.loadCity(e.target.value);
     });
+
+    const ticketCity = document.getElementById('ticket-city');
+    if (ticketCity) {
+      ticketCity.addEventListener('change', e => {
+        const headerCity = document.getElementById('city-selector');
+        if (headerCity) headerCity.value = e.target.value;
+        this.loadCity(e.target.value);
+      });
+    }
 
     // Bus info card close
     document.getElementById('bic-close').addEventListener('click', () => this.hideBusCard());
@@ -2110,6 +2127,8 @@ class TransitApp {
     document.getElementById('planner-go-btn').textContent = dict.findRoutesBtn;
 
     // Ticket labels
+    const lblTicketCity = document.getElementById('lbl-ticket-city');
+    if (lblTicketCity) lblTicketCity.textContent = dict.selectCityLabel;
     document.querySelector('label[for="ticket-route"]').textContent = dict.selectRouteLabel;
     document.querySelector('label[for="ticket-from"]').textContent = dict.fromStopLabel;
     document.querySelector('label[for="ticket-to"]').textContent = dict.toStopLabel;
@@ -2118,12 +2137,20 @@ class TransitApp {
 
     // Digital Pass Labels
     document.querySelector('.ticket-brand').textContent = `TransitTrack ${dict.tickets}`;
-    document.querySelector('.ticket-col:nth-child(1) .t-lbl').textContent = dict.passengerLabel;
-    document.querySelectorAll('.ticket-col .t-lbl')[1].textContent = dict.routeLabel;
-    document.querySelectorAll('.ticket-col .t-lbl')[2].textContent = dict.fromStopPass;
-    document.querySelectorAll('.ticket-col .t-lbl')[3].textContent = dict.toStopPass;
-    document.querySelectorAll('.ticket-col .t-lbl')[4].textContent = dict.dateLabel;
-    document.querySelectorAll('.ticket-col .t-lbl')[5].textContent = dict.farePaidLabel;
+    const lblPassenger = document.getElementById('lbl-pass-passenger');
+    if (lblPassenger) lblPassenger.textContent = dict.passengerLabel;
+    const lblRoute = document.getElementById('lbl-pass-route');
+    if (lblRoute) lblRoute.textContent = dict.routeLabel;
+    const lblFrom = document.getElementById('lbl-pass-from');
+    if (lblFrom) lblFrom.textContent = dict.fromStopPass;
+    const lblTo = document.getElementById('lbl-pass-to');
+    if (lblTo) lblTo.textContent = dict.toStopPass;
+    const lblDate = document.getElementById('lbl-pass-date');
+    if (lblDate) lblDate.textContent = dict.dateLabel;
+    const lblSeat = document.getElementById('lbl-pass-seat');
+    if (lblSeat) lblSeat.textContent = dict.seatLabel;
+    const lblFare = document.getElementById('lbl-pass-fare');
+    if (lblFare) lblFare.textContent = dict.farePaidLabel;
     document.getElementById('ticket-cancel-btn').textContent = dict.cancelPassBtn;
 
     // Map traffic label
@@ -2206,6 +2233,14 @@ class TransitApp {
 
   // ── Ticket Pass Generator ──────────────────────────────
   populateTicketSelectors(city) {
+    const citySelect = document.getElementById('ticket-city');
+    if (citySelect) {
+      if (citySelect.children.length === 0) {
+        citySelect.innerHTML = Object.values(CITIES).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      }
+      citySelect.value = city.id;
+    }
+
     const routeSelect = document.getElementById('ticket-route');
     const fromSelect = document.getElementById('ticket-from');
     const toSelect = document.getElementById('ticket-to');
@@ -2224,28 +2259,33 @@ class TransitApp {
       if (route.stops.length > 1) {
         toSelect.selectedIndex = route.stops.length - 1;
       }
-      this.updateTicketFare(route);
+      this.updateTicketFare();
       this.renderBookingSeatMap();
     };
 
     routeSelect.addEventListener('change', updateStops);
     fromSelect.addEventListener('change', () => {
-      this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value));
+      this.updateTicketFare();
       this.renderBookingSeatMap();
     });
     toSelect.addEventListener('change', () => {
-      this.updateTicketFare(city.routes.find(r => r.id === routeSelect.value));
+      this.updateTicketFare();
       this.renderBookingSeatMap();
     });
     
     updateStops();
   }
 
-  updateTicketFare(route) {
+  updateTicketFare() {
+    const routeSelect = document.getElementById('ticket-route');
     const fromSelect = document.getElementById('ticket-from');
     const toSelect = document.getElementById('ticket-to');
     const fareEl = document.getElementById('ticket-fare-amount');
-    if (!fromSelect || !toSelect || !fareEl || !route) return;
+    if (!routeSelect || !fromSelect || !toSelect || !fareEl) return;
+
+    const city = CITIES[this.currentCityId];
+    const route = city.routes.find(r => r.id === routeSelect.value);
+    if (!route) return;
 
     const idx1 = route.stops.findIndex(s => s.id === fromSelect.value);
     const idx2 = route.stops.findIndex(s => s.id === toSelect.value);
@@ -2254,8 +2294,10 @@ class TransitApp {
       return;
     }
     const count = Math.abs(idx2 - idx1);
-    const fare = Math.max(5, count * 3 + 2);
-    fareEl.textContent = `₹${fare}`;
+    const baseFare = Math.max(5, count * 3 + 2);
+    const numSeats = Math.max(1, this._selectedBookingSeats?.length || 0);
+    const totalFare = baseFare * numSeats;
+    fareEl.textContent = `₹${totalFare}`;
   }
 
   startPassBooking() {
@@ -2274,7 +2316,7 @@ class TransitApp {
     }
 
     const fareText = document.getElementById('ticket-fare-amount').textContent;
-    const seatVal = this._selectedBookingSeat || null;
+    const seatVal = this._selectedBookingSeats && this._selectedBookingSeats.length > 0 ? this._selectedBookingSeats.join(', ') : 'None';
     this._pendingBooking = {
       routeNumber: route.number,
       routeColor: route.color,
@@ -2767,8 +2809,8 @@ class TransitApp {
     if (!grid) return;
     grid.innerHTML = '';
     
-    this._selectedBookingSeat = null;
-    if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seat selected";
+    this._selectedBookingSeats = [];
+    if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seats selected";
 
     const rows = 6;
     let seatCounter = 1;
@@ -2806,27 +2848,31 @@ class TransitApp {
               return;
             }
             
-            if (state === 'accessible' && this._selectedBookingSeat !== seatNum) {
+            const isSelected = this._selectedBookingSeats.includes(seatNum);
+            
+            if (state === 'accessible' && !isSelected) {
               const confirmOk = confirm(this.currentLanguage === 'hi' ? "यह सीट विशेष जरूरतों वाले यात्रियों के लिए आरक्षित है। क्या आप इसे बुक करना चाहते हैं?" : this.currentLanguage === 'mr' ? "ही जागा विशेष गरजा असलेल्या प्रवाशांसाठी राखीव आहे. आपण बुक करू इच्छिता?" : "This seat is prioritized for passengers with accessibility needs or seniors. Do you wish to book it?");
               if (!confirmOk) return;
             }
 
-            const activeSeat = grid.querySelector('.seat.selected');
-            if (activeSeat) {
-              activeSeat.classList.remove('selected');
-              if (activeSeat.dataset.seatNum === String(seatNum)) {
-                this._selectedBookingSeat = null;
-                if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seat selected";
-                return;
-              }
+            if (isSelected) {
+              this._selectedBookingSeats = this._selectedBookingSeats.filter(s => s !== seatNum);
+              seat.classList.remove('selected');
+            } else {
+              this._selectedBookingSeats.push(seatNum);
+              seat.classList.add('selected');
             }
 
-            seat.classList.add('selected');
-            this._selectedBookingSeat = seatNum;
-            if (indicator) {
-              indicator.textContent = this.currentLanguage === 'hi' ? `चुनी गई सीट: ${seatNum} (${state === 'accessible' ? 'प्राथमिकता' : 'सामान्य'})` : this.currentLanguage === 'mr' ? `निवडलेली जागा: ${seatNum} (${state === 'accessible' ? 'प्राधान्य' : 'सामान्य'})` : `Selected seat: ${seatNum} (${state === 'accessible' ? 'Priority' : 'Standard'})`;
+            if (this._selectedBookingSeats.length === 0) {
+              if (indicator) indicator.textContent = this.currentLanguage === 'hi' ? "कोई सीट नहीं चुनी गई" : this.currentLanguage === 'mr' ? "कोणतीही जागा निवडली नाही" : "No seats selected";
+            } else {
+              this._selectedBookingSeats.sort((a, b) => a - b);
+              if (indicator) {
+                indicator.textContent = this.currentLanguage === 'hi' ? `चुनी गई सीटें: ${this._selectedBookingSeats.join(', ')}` : this.currentLanguage === 'mr' ? `निवडलेली जागा: ${this._selectedBookingSeats.join(', ')}` : `Selected seats: ${this._selectedBookingSeats.join(', ')}`;
+              }
             }
-            this.showToast(this.currentLanguage === 'hi' ? `सीट ${seatNum} चुनी गई` : this.currentLanguage === 'mr' ? `जागा ${seatNum} निवडली` : `Selected seat ${seatNum}`);
+            this.updateTicketFare();
+            this.showToast(this.currentLanguage === 'hi' ? `सीट चयन अद्यतनित किया गया` : this.currentLanguage === 'mr' ? `सीट निवड अद्ययावत केली` : `Seat selection updated`);
           });
 
           grid.appendChild(seat);
@@ -2869,6 +2915,8 @@ class TransitApp {
       document.getElementById('pass-from-stop').textContent = activePass.fromName;
       document.getElementById('pass-to-stop').textContent = activePass.toName;
       document.getElementById('pass-date').textContent = activePass.date;
+      const passSeat = document.getElementById('pass-seat');
+      if (passSeat) passSeat.textContent = activePass.seat || 'None';
       document.getElementById('pass-fare').textContent = activePass.fare;
 
       // Render Canvas QR
